@@ -101,6 +101,12 @@ export class RealtimeRedisBridge {
       case 'incident.resolved':
         this.io.to(room).emit(event.type, event.payload);
         break;
+      case 'ai.analysis.completed':
+        this.io.to(room).emit(event.type, event.payload);
+        break;
+      case 'ai.analysis.failed':
+        this.io.to(room).emit(event.type, event.payload);
+        break;
     }
   }
 }

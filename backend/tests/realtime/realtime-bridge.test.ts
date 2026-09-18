@@ -144,4 +144,45 @@ describe('RealtimeRedisBridge', () => {
     expect(emissions).toHaveLength(0);
     await bridge.stop();
   });
+
+  it('routes validated AI completion and failure events through the owning user room', () => {
+    const subscriber = new FakeSubscriber();
+    const emissions: Emission[] = [];
+    const bridge = new RealtimeRedisBridge(
+      subscriber,
+      CHANNEL,
+      fakeSocketServer(emissions),
+      pino({ enabled: false }),
+    );
+    const completed: RealtimeDomainEvent = {
+      version: 1,
+      eventId: 'ai-completed-000000000000000000000009',
+      userId: USER_ID,
+      type: 'ai.analysis.completed',
+      occurredAt: '2026-01-01T00:00:00.000Z',
+      payload: {
+        analysisId: '000000000000000000000009',
+        resourceType: 'monitor',
+        resourceId: '000000000000000000000002',
+      },
+    };
+    const failed: RealtimeDomainEvent = {
+      ...completed,
+      eventId: 'ai-failed-000000000000000000000009',
+      type: 'ai.analysis.failed',
+      payload: {
+        ...completed.payload,
+        failureCode: 'AI_PROVIDER_ERROR',
+      },
+    };
+
+    bridge.handleMessage(JSON.stringify(completed));
+    bridge.handleMessage(JSON.stringify(failed));
+
+    expect(emissions).toEqual([
+      { room: `user:${USER_ID}`, eventName: completed.type, payload: completed.payload },
+      { room: `user:${USER_ID}`, eventName: failed.type, payload: failed.payload },
+    ]);
+    expect(JSON.stringify(emissions)).not.toContain('providerMessage');
+  });
 });

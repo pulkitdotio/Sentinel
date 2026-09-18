@@ -47,6 +47,15 @@ import {
   PROBE_JOB_ATTEMPTS,
   PROBE_JOB_BACKOFF_MS,
 } from '../../src/queues/probe-job-publisher';
+import {
+  AI_ANALYSIS_JOB_ATTEMPTS,
+  AI_ANALYSIS_JOB_BACKOFF_MS,
+  BullMqAiAnalysisJobPublisher,
+} from '../../src/queues/ai-analysis-publisher';
+import {
+  aiAnalysisJobPayloadSchema,
+  createAiAnalysisJobId,
+} from '../../src/queues/jobs/ai-analysis';
 
 const basePayload: ProbeJobPayload = {
   monitorId: '000000000000000000000001',
@@ -160,5 +169,38 @@ describe('probe queue definitions', () => {
       ],
       closed: true,
     });
+  });
+
+  it('publishes an ID-only AI job with bounded retry settings and a deterministic ID', async () => {
+    const connection = new Redis('redis://localhost:6379', { lazyConnect: true });
+    const publisher = new BullMqAiAnalysisJobPublisher(connection, 'sentinel');
+    const payload = { analysisId: '000000000000000000000009' };
+
+    expect(aiAnalysisJobPayloadSchema.parse(payload)).toEqual(payload);
+    expect(() => aiAnalysisJobPayloadSchema.parse({ ...payload, context: {} })).toThrow();
+    expect(createAiAnalysisJobId(payload)).toBe(
+      'ai-analysis-000000000000000000000009',
+    );
+    await publisher.enqueue(payload);
+    await publisher.close();
+    connection.disconnect(false);
+
+    expect(queueState.instances).toEqual([
+      expect.objectContaining({
+        name: 'ai-analysis',
+        additions: [
+          {
+            name: 'analyze',
+            data: payload,
+            options: {
+              jobId: 'ai-analysis-000000000000000000000009',
+              attempts: AI_ANALYSIS_JOB_ATTEMPTS,
+              backoff: { type: 'exponential', delay: AI_ANALYSIS_JOB_BACKOFF_MS },
+            },
+          },
+        ],
+        closed: true,
+      }),
+    ]);
   });
 });

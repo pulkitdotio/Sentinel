@@ -8,6 +8,19 @@ const booleanStringSchema = z
   .enum(['true', 'false'])
   .transform((value) => value === 'true');
 
+const optionalTrimmedStringSchema = z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+  z.string().trim().min(1).optional(),
+);
+
+const optionalPositiveIntegerSchema = z.preprocess(
+  (value) => (typeof value === 'string' && value.trim() === '' ? undefined : value),
+  z.coerce.number().int().positive().optional(),
+).catch(undefined);
+
+const OPENAI_KEY_PLACEHOLDER = 'replace-with-provider-key';
+const OPENAI_MODEL_PLACEHOLDER = 'replace-with-supported-model';
+
 const commaSeparatedRegionsSchema = z.string().transform((value, context) => {
   const regions = value
     .split(',')
@@ -72,9 +85,9 @@ const environmentSchema = z
     MAX_RESPONSE_BODY_BYTES: z.coerce.number().int().positive(),
     ALLOW_PRIVATE_NETWORK_TARGETS: booleanStringSchema,
     AI_ENABLED: booleanStringSchema,
-    OPENAI_API_KEY: z.string().trim().min(1),
-    OPENAI_MODEL: z.string().trim().min(1),
-    AI_REQUEST_TIMEOUT_MS: z.coerce.number().int().positive(),
+    OPENAI_API_KEY: optionalTrimmedStringSchema,
+    OPENAI_MODEL: optionalTrimmedStringSchema,
+    AI_REQUEST_TIMEOUT_MS: optionalPositiveIntegerSchema,
   })
   .superRefine((environment, context) => {
     if (!environment.ENABLED_REGIONS.includes(environment.PROBE_REGION)) {
@@ -83,6 +96,38 @@ const environmentSchema = z
         path: ['PROBE_REGION'],
         message: 'must be included in ENABLED_REGIONS',
       });
+    }
+
+    if (environment.AI_ENABLED) {
+      if (
+        environment.OPENAI_API_KEY === undefined ||
+        environment.OPENAI_API_KEY === OPENAI_KEY_PLACEHOLDER
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['OPENAI_API_KEY'],
+          message: 'must contain a non-placeholder key when AI_ENABLED=true',
+        });
+      }
+
+      if (
+        environment.OPENAI_MODEL === undefined ||
+        environment.OPENAI_MODEL === OPENAI_MODEL_PLACEHOLDER
+      ) {
+        context.addIssue({
+          code: 'custom',
+          path: ['OPENAI_MODEL'],
+          message: 'must contain a non-placeholder model when AI_ENABLED=true',
+        });
+      }
+
+      if (environment.AI_REQUEST_TIMEOUT_MS === undefined) {
+        context.addIssue({
+          code: 'custom',
+          path: ['AI_REQUEST_TIMEOUT_MS'],
+          message: 'is required when AI_ENABLED=true',
+        });
+      }
     }
   });
 

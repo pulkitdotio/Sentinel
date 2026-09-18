@@ -9,6 +9,16 @@ import { createAuthRouter } from '../modules/auth/auth.routes';
 import { AuthService } from '../modules/auth/auth.service';
 import type { JwtConfiguration } from '../modules/auth/jwt';
 import {
+  MongooseAiAnalysisRepository,
+  type AiAnalysisRepository,
+} from '../modules/ai/ai-analysis-repository';
+import { AiAnalysisService } from '../modules/ai/ai-analysis.service';
+import {
+  createAiAnalysisRouter,
+  createIncidentAiRouter,
+  createMonitorAiRouter,
+} from '../modules/ai/ai.routes';
+import {
   MongooseCheckResultRepository,
   type MetricsCheckResultRepository,
 } from '../modules/checks/check-result-repository';
@@ -33,6 +43,10 @@ import {
   type MonitorRepository,
 } from '../modules/monitors/monitor-repository';
 import { MonitorService } from '../modules/monitors/monitor.service';
+import {
+  UNAVAILABLE_AI_ANALYSIS_JOB_PUBLISHER,
+  type AiAnalysisJobPublisher,
+} from '../queues/ai-analysis-publisher';
 
 export interface AuthDependencies extends JwtConfiguration {
   userRepository?: UserRepository;
@@ -56,6 +70,12 @@ export interface AppDependencies {
     checkResultRepository?: MetricsCheckResultRepository;
     clock?: () => Date;
   };
+  ai?: {
+    enabled: boolean;
+    analysisRepository?: AiAnalysisRepository;
+    queuePublisher?: AiAnalysisJobPublisher;
+    clock?: () => Date;
+  };
 }
 
 export function createApp({
@@ -65,6 +85,7 @@ export function createApp({
   monitors,
   incidents,
   metrics,
+  ai,
 }: AppDependencies): Express {
   const app = express();
   const userRepository = auth.userRepository ?? new MongooseUserRepository();
@@ -87,6 +108,15 @@ export function createApp({
     incidentRepository,
     monitorRepository,
   );
+  const aiService = new AiAnalysisService(
+    ai?.enabled ?? false,
+    ai?.analysisRepository ?? new MongooseAiAnalysisRepository(),
+    monitorRepository,
+    incidentRepository,
+    ai?.queuePublisher ?? UNAVAILABLE_AI_ANALYSIS_JOB_PUBLISHER,
+    logger,
+    ai?.clock,
+  );
 
   app.disable('x-powered-by');
   app.use(pinoHttp({ logger }));
@@ -94,6 +124,9 @@ export function createApp({
 
   app.use('/api/v1/health', healthRouter);
   app.use('/api/v1/auth', createAuthRouter(authService, jwtConfiguration));
+  app.use('/api/v1/monitors', createMonitorAiRouter(aiService, jwtConfiguration));
+  app.use('/api/v1/incidents', createIncidentAiRouter(aiService, jwtConfiguration));
+  app.use('/api/v1/ai-analyses', createAiAnalysisRouter(aiService, jwtConfiguration));
   app.use(
     '/api/v1/monitors',
     createMonitorIncidentRouter(incidentService, jwtConfiguration),

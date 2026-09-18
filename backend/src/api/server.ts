@@ -17,6 +17,7 @@ import {
   createRedisConnection,
   disconnectRedis,
 } from '../queues/connection';
+import { BullMqAiAnalysisJobPublisher } from '../queues/ai-analysis-publisher';
 import { realtimeChannelName } from '../realtime/channel';
 
 export interface RunningServer {
@@ -25,6 +26,7 @@ export interface RunningServer {
   redisConnection: Redis;
   redisSubscriber: Redis;
   realtimeBridge: RealtimeRedisBridge;
+  aiAnalysisJobPublisher: BullMqAiAnalysisJobPublisher | null;
   logger: Logger;
 }
 
@@ -84,11 +86,19 @@ export async function startServer(): Promise<RunningServer> {
   let httpServer: Server | undefined;
   let socketServer: RealtimeSocketServer | undefined;
   let realtimeBridge: RealtimeRedisBridge | undefined;
+  let aiAnalysisJobPublisher: BullMqAiAnalysisJobPublisher | undefined;
 
   try {
     await connectMongo(environment.MONGODB_URI, logger);
     await connectRedis(redisConnection, logger);
     await connectRedis(redisSubscriber, logger);
+
+    if (environment.AI_ENABLED) {
+      aiAnalysisJobPublisher = new BullMqAiAnalysisJobPublisher(
+        redisConnection,
+        environment.BULLMQ_PREFIX,
+      );
+    }
 
     const app = createApp({
       logger,
@@ -99,6 +109,12 @@ export async function startServer(): Promise<RunningServer> {
       },
       monitors: {
         enabledRegions: environment.ENABLED_REGIONS,
+      },
+      ai: {
+        enabled: environment.AI_ENABLED,
+        ...(aiAnalysisJobPublisher === undefined
+          ? {}
+          : { queuePublisher: aiAnalysisJobPublisher }),
       },
     });
     httpServer = createServer(app);
@@ -123,6 +139,7 @@ export async function startServer(): Promise<RunningServer> {
       redisConnection,
       redisSubscriber,
       realtimeBridge,
+      aiAnalysisJobPublisher: aiAnalysisJobPublisher ?? null,
       logger,
     };
   } catch (error: unknown) {
@@ -135,6 +152,14 @@ export async function startServer(): Promise<RunningServer> {
         await realtimeBridge.stop();
       } catch (stopError: unknown) {
         logger.error({ err: stopError }, 'Failed to stop realtime bridge after startup error');
+      }
+    }
+
+    if (aiAnalysisJobPublisher) {
+      try {
+        await aiAnalysisJobPublisher.close();
+      } catch (closeError: unknown) {
+        logger.error({ err: closeError }, 'Failed to close AI analysis queue after startup error');
       }
     }
 
@@ -169,6 +194,15 @@ export async function stopServer(
   } catch (error: unknown) {
     failed = true;
     runningServer.logger.error({ err: error }, 'Failed to stop realtime Redis bridge');
+  }
+
+  if (runningServer.aiAnalysisJobPublisher) {
+    try {
+      await runningServer.aiAnalysisJobPublisher.close();
+    } catch (error: unknown) {
+      failed = true;
+      runningServer.logger.error({ err: error }, 'Failed to close AI analysis queue');
+    }
   }
 
   await disconnectRedis(runningServer.redisSubscriber, runningServer.logger);

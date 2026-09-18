@@ -9,6 +9,7 @@ const USER_ID = '000000000000000000000001';
 const MONITOR_ID = '000000000000000000000002';
 const CHECK_RESULT_ID = '000000000000000000000003';
 const INCIDENT_ID = '000000000000000000000004';
+const ANALYSIS_ID = '000000000000000000000005';
 const OCCURRED_AT = '2026-01-01T00:00:00.000Z';
 
 const validEvents: RealtimeDomainEvent[] = [
@@ -72,6 +73,31 @@ const validEvents: RealtimeDomainEvent[] = [
       triggerReason: 'regional_failure_consensus',
     },
   },
+  {
+    version: 1,
+    eventId: `ai-completed-${ANALYSIS_ID}`,
+    userId: USER_ID,
+    type: 'ai.analysis.completed',
+    occurredAt: OCCURRED_AT,
+    payload: {
+      analysisId: ANALYSIS_ID,
+      resourceType: 'monitor',
+      resourceId: MONITOR_ID,
+    },
+  },
+  {
+    version: 1,
+    eventId: `ai-failed-${ANALYSIS_ID}`,
+    userId: USER_ID,
+    type: 'ai.analysis.failed',
+    occurredAt: OCCURRED_AT,
+    payload: {
+      analysisId: ANALYSIS_ID,
+      resourceType: 'incident',
+      resourceId: INCIDENT_ID,
+      failureCode: 'AI_PROVIDER_TIMEOUT',
+    },
+  },
 ];
 
 describe('realtime domain event contract', () => {
@@ -83,7 +109,7 @@ describe('realtime domain event contract', () => {
     expect(
       realtimeDomainEventSchema.safeParse({
         ...validEvents[0],
-        type: 'ai.analysis.completed',
+        type: 'ai.analysis.progress',
       }).success,
     ).toBe(false);
   });
@@ -141,6 +167,19 @@ describe('realtime domain event contract', () => {
       realtimeDomainEventSchema.safeParse({
         ...validEvents[3],
         payload: { ...validEvents[3]?.payload, durationMs: -1 },
+      }).success,
+    ).toBe(false);
+  });
+
+  it('rejects provider details and unknown failure codes in AI events', () => {
+    expect(
+      realtimeDomainEventSchema.safeParse({
+        ...validEvents[5],
+        payload: {
+          ...validEvents[5]?.payload,
+          failureCode: 'RAW_PROVIDER_ERROR',
+          providerMessage: 'secret provider response',
+        },
       }).success,
     ).toBe(false);
   });

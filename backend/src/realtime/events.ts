@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { CHECK_ERROR_TYPES } from '../database/models/check-result';
 import { MONITOR_STATUSES } from '../database/models/monitor';
+import { AI_FAILURE_CODES } from '../modules/ai/ai-contracts';
 import { regionIdentifierSchema } from '../shared/schemas/region';
 
 const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i, 'must be a MongoDB object id');
@@ -66,6 +67,23 @@ export const incidentResolvedPayloadSchema = z
   })
   .strict();
 
+export const aiAnalysisCompletedPayloadSchema = z
+  .object({
+    analysisId: objectIdSchema,
+    resourceType: z.enum(['monitor', 'incident']),
+    resourceId: objectIdSchema,
+  })
+  .strict();
+
+export const aiAnalysisFailedPayloadSchema = z
+  .object({
+    analysisId: objectIdSchema,
+    resourceType: z.enum(['monitor', 'incident']),
+    resourceId: objectIdSchema,
+    failureCode: z.enum(AI_FAILURE_CODES),
+  })
+  .strict();
+
 const checkCompletedEventSchema = envelopeSchema
   .extend({
     type: z.literal('check.completed'),
@@ -94,11 +112,27 @@ const incidentResolvedEventSchema = envelopeSchema
   })
   .strict();
 
+const aiAnalysisCompletedEventSchema = envelopeSchema
+  .extend({
+    type: z.literal('ai.analysis.completed'),
+    payload: aiAnalysisCompletedPayloadSchema,
+  })
+  .strict();
+
+const aiAnalysisFailedEventSchema = envelopeSchema
+  .extend({
+    type: z.literal('ai.analysis.failed'),
+    payload: aiAnalysisFailedPayloadSchema,
+  })
+  .strict();
+
 export const realtimeDomainEventSchema = z.discriminatedUnion('type', [
   checkCompletedEventSchema,
   monitorStatusChangedEventSchema,
   incidentOpenedEventSchema,
   incidentResolvedEventSchema,
+  aiAnalysisCompletedEventSchema,
+  aiAnalysisFailedEventSchema,
 ]);
 
 export type CheckCompletedPayload = z.infer<typeof checkCompletedPayloadSchema>;
@@ -107,6 +141,10 @@ export type MonitorStatusChangedPayload = z.infer<
 >;
 export type IncidentOpenedPayload = z.infer<typeof incidentOpenedPayloadSchema>;
 export type IncidentResolvedPayload = z.infer<typeof incidentResolvedPayloadSchema>;
+export type AiAnalysisCompletedPayload = z.infer<
+  typeof aiAnalysisCompletedPayloadSchema
+>;
+export type AiAnalysisFailedPayload = z.infer<typeof aiAnalysisFailedPayloadSchema>;
 export type RealtimeDomainEvent = z.infer<typeof realtimeDomainEventSchema>;
 
 export interface ServerToClientEvents {
@@ -114,6 +152,8 @@ export interface ServerToClientEvents {
   'monitor.status_changed': (payload: MonitorStatusChangedPayload) => void;
   'incident.opened': (payload: IncidentOpenedPayload) => void;
   'incident.resolved': (payload: IncidentResolvedPayload) => void;
+  'ai.analysis.completed': (payload: AiAnalysisCompletedPayload) => void;
+  'ai.analysis.failed': (payload: AiAnalysisFailedPayload) => void;
 }
 
 export function checkCompletedEventId(checkResultId: string): string {
@@ -135,4 +175,12 @@ export function incidentOpenedEventId(incidentId: string): string {
 
 export function incidentResolvedEventId(incidentId: string): string {
   return `incident-resolved:${incidentId}`;
+}
+
+export function aiAnalysisCompletedEventId(analysisId: string): string {
+  return `ai-completed-${analysisId}`;
+}
+
+export function aiAnalysisFailedEventId(analysisId: string): string {
+  return `ai-failed-${analysisId}`;
 }

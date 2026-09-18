@@ -12,6 +12,7 @@ import {
   stopServer,
   type RunningServer,
 } from '../../src/api/server';
+import type { BullMqAiAnalysisJobPublisher } from '../../src/queues/ai-analysis-publisher';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -61,12 +62,16 @@ describe('API realtime lifecycle', () => {
     const command = fakeRedisConnection();
     const subscriber = fakeRedisConnection();
     const disconnectMongo = vi.spyOn(mongoose, 'disconnect').mockResolvedValue();
+    const closeAiQueue = vi.fn().mockResolvedValue(undefined);
     const runtime: RunningServer = {
       httpServer,
       socketServer,
       redisConnection: command.connection,
       redisSubscriber: subscriber.connection,
       realtimeBridge: { stop: stopBridge } as unknown as RealtimeRedisBridge,
+      aiAnalysisJobPublisher: {
+        close: closeAiQueue,
+      } as unknown as BullMqAiAnalysisJobPublisher,
       logger,
     };
 
@@ -74,6 +79,7 @@ describe('API realtime lifecycle', () => {
 
     expect(closeSocket).toHaveBeenCalledOnce();
     expect(stopBridge).toHaveBeenCalledOnce();
+    expect(closeAiQueue).toHaveBeenCalledOnce();
     expect(subscriber.quit).toHaveBeenCalledOnce();
     expect(command.quit).toHaveBeenCalledOnce();
     expect(subscriber.disconnect).not.toHaveBeenCalled();

@@ -247,7 +247,10 @@ export class IncidentProcessor {
           err: error,
           eventId: event.eventId,
           eventType: event.type,
-          monitorId: event.payload.monitorId,
+          resourceId:
+            'monitorId' in event.payload
+              ? event.payload.monitorId
+              : event.payload.resourceId,
         },
         'Realtime event publishing failed after incident state became durable',
       );
