@@ -13,6 +13,10 @@ export function createLogger(environment: Environment): pino.Logger {
       paths: [
         'req.headers.authorization',
         'req.headers.cookie',
+        'req.body.password',
+        'req.body.passwordHash',
+        'password',
+        'passwordHash',
         '*.password',
         '*.passwordHash',
         '*.token',

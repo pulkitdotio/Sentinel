@@ -7,6 +7,10 @@ import { createApp } from '../../src/api/app';
 const app = createApp({
   logger: pino({ enabled: false }),
   isProduction: false,
+  auth: {
+    secret: 'a-test-secret-that-is-long-enough',
+    expiresIn: '7d',
+  },
 });
 
 describe('Sentinel API foundation', () => {

@@ -44,7 +44,10 @@ const environmentSchema = z
     }),
     BULLMQ_PREFIX: z.string().trim().min(1),
     JWT_SECRET: z.string().min(16, 'must contain at least 16 characters'),
-    JWT_EXPIRES_IN: z.string().trim().min(1),
+    JWT_EXPIRES_IN: z
+      .string()
+      .trim()
+      .regex(/^[1-9]\d*[smhdw]$/, 'must be a positive duration such as 30m, 12h, or 7d'),
     CLIENT_ORIGIN: z.url(),
     ENABLED_REGIONS: commaSeparatedRegionsSchema,
     PROBE_REGION: z.string().trim().min(1),

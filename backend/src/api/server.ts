@@ -58,6 +58,10 @@ export async function startServer(): Promise<RunningServer> {
     const app = createApp({
       logger,
       isProduction: environment.NODE_ENV === 'production',
+      auth: {
+        secret: environment.JWT_SECRET,
+        expiresIn: environment.JWT_EXPIRES_IN,
+      },
     });
     const httpServer = createServer(app);
 

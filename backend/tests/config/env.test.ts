@@ -34,4 +34,10 @@ describe('environment configuration', () => {
 
     expect(() => parseEnvironment(input)).toThrow(/AI_ENABLED/);
   });
+
+  it('rejects an invalid JWT expiration duration', () => {
+    const input = { ...validEnvironmentInput, JWT_EXPIRES_IN: 'forever' };
+
+    expect(() => parseEnvironment(input)).toThrow(/JWT_EXPIRES_IN/);
+  });
 });
