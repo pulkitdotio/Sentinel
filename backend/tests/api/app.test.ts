@@ -11,6 +11,9 @@ const app = createApp({
     secret: 'a-test-secret-that-is-long-enough',
     expiresIn: '7d',
   },
+  monitors: {
+    enabledRegions: ['mumbai', 'singapore', 'frankfurt'],
+  },
 });
 
 describe('Sentinel API foundation', () => {

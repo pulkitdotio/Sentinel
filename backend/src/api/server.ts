@@ -62,6 +62,9 @@ export async function startServer(): Promise<RunningServer> {
         secret: environment.JWT_SECRET,
         expiresIn: environment.JWT_EXPIRES_IN,
       },
+      monitors: {
+        enabledRegions: environment.ENABLED_REGIONS,
+      },
     });
     const httpServer = createServer(app);
 

@@ -101,6 +101,9 @@ function createTestContext(): {
       expiresIn: '7d',
       userRepository,
     },
+    monitors: {
+      enabledRegions: ['mumbai', 'singapore', 'frankfurt'],
+    },
   });
 
   return { app, userRepository };
