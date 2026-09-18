@@ -2,6 +2,8 @@ import 'dotenv/config';
 
 import { z } from 'zod';
 
+import { regionIdentifierSchema } from '../shared/schemas/region';
+
 const booleanStringSchema = z
   .enum(['true', 'false'])
   .transform((value) => value === 'true');
@@ -30,6 +32,19 @@ const commaSeparatedRegionsSchema = z.string().transform((value, context) => {
     return z.NEVER;
   }
 
+  const invalidRegion = regions.find(
+    (region) => !regionIdentifierSchema.safeParse(region).success,
+  );
+
+  if (invalidRegion) {
+    context.addIssue({
+      code: 'custom',
+      message: `contains invalid region identifier: ${invalidRegion}`,
+    });
+
+    return z.NEVER;
+  }
+
   return regions;
 });
 
@@ -50,7 +65,7 @@ const environmentSchema = z
       .regex(/^[1-9]\d*[smhdw]$/, 'must be a positive duration such as 30m, 12h, or 7d'),
     CLIENT_ORIGIN: z.url(),
     ENABLED_REGIONS: commaSeparatedRegionsSchema,
-    PROBE_REGION: z.string().trim().min(1),
+    PROBE_REGION: regionIdentifierSchema,
     PROBE_CONCURRENCY: z.coerce.number().int().positive(),
     SCHEDULER_POLL_INTERVAL_MS: z.coerce.number().int().positive(),
     GLOBAL_CHECK_TIMEOUT_MS: z.coerce.number().int().positive(),

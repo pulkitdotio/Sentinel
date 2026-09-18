@@ -29,6 +29,15 @@ describe('environment configuration', () => {
     expect(() => parseEnvironment(input)).toThrow(/PROBE_REGION/);
   });
 
+  it('rejects region identifiers that cannot be used in regional queue names', () => {
+    const input = {
+      ...validEnvironmentInput,
+      ENABLED_REGIONS: 'mumbai,invalid:region',
+    };
+
+    expect(() => parseEnvironment(input)).toThrow(/ENABLED_REGIONS/);
+  });
+
   it('rejects ambiguous boolean values', () => {
     const input = { ...validEnvironmentInput, AI_ENABLED: 'yes' };
 

@@ -46,6 +46,32 @@ export interface MonitorRepository {
   deleteOwnedById(userId: string, monitorId: string): Promise<boolean>;
 }
 
+export interface DueMonitorRecord {
+  id: string;
+  userId: string;
+  intervalSeconds: number;
+  regions: string[];
+  nextCheckAt: Date;
+}
+
+export interface MonitorSchedulerRepository {
+  findDue(now: Date, limit: number): Promise<DueMonitorRecord[]>;
+  advanceNextCheckAt(
+    monitorId: string,
+    expectedNextCheckAt: Date,
+    nextCheckAt: Date,
+  ): Promise<boolean>;
+}
+
+export interface ProbeMonitorRepository {
+  findOwnedById(userId: string, monitorId: string): Promise<MonitorRecord | null>;
+  updateLastCheckedAt(
+    userId: string,
+    monitorId: string,
+    completedAt: Date,
+  ): Promise<void>;
+}
+
 function toMonitorRecord(monitor: MonitorDocument): MonitorRecord {
   return {
     id: monitor._id.toHexString(),
@@ -69,7 +95,9 @@ function toMonitorRecord(monitor: MonitorDocument): MonitorRecord {
   };
 }
 
-export class MongooseMonitorRepository implements MonitorRepository {
+export class MongooseMonitorRepository
+  implements MonitorRepository, MonitorSchedulerRepository, ProbeMonitorRepository
+{
   public constructor(private readonly monitorModel: Model<Monitor> = MonitorModel) {}
 
   public async create(input: CreateMonitorRecord): Promise<MonitorRecord> {
@@ -106,5 +134,47 @@ export class MongooseMonitorRepository implements MonitorRepository {
   public async deleteOwnedById(userId: string, monitorId: string): Promise<boolean> {
     const result = await this.monitorModel.deleteOne({ _id: monitorId, userId }).exec();
     return result.deletedCount === 1;
+  }
+
+  public async findDue(now: Date, limit: number): Promise<DueMonitorRecord[]> {
+    const monitors = await this.monitorModel
+      .find({ isPaused: false, nextCheckAt: { $lte: now } })
+      .sort({ nextCheckAt: 1 })
+      .limit(limit)
+      .select({ userId: 1, intervalSeconds: 1, regions: 1, nextCheckAt: 1 })
+      .exec();
+
+    return monitors.map((monitor) => ({
+      id: monitor._id.toHexString(),
+      userId: monitor.userId.toHexString(),
+      intervalSeconds: monitor.intervalSeconds,
+      regions: [...monitor.regions],
+      nextCheckAt: monitor.nextCheckAt,
+    }));
+  }
+
+  public async advanceNextCheckAt(
+    monitorId: string,
+    expectedNextCheckAt: Date,
+    nextCheckAt: Date,
+  ): Promise<boolean> {
+    const result = await this.monitorModel
+      .updateOne(
+        { _id: monitorId, isPaused: false, nextCheckAt: expectedNextCheckAt },
+        { $set: { nextCheckAt } },
+      )
+      .exec();
+
+    return result.modifiedCount === 1;
+  }
+
+  public async updateLastCheckedAt(
+    userId: string,
+    monitorId: string,
+    completedAt: Date,
+  ): Promise<void> {
+    await this.monitorModel
+      .updateOne({ _id: monitorId, userId }, { $max: { lastCheckedAt: completedAt } })
+      .exec();
   }
 }
