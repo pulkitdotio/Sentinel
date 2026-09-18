@@ -3,9 +3,8 @@ node_modules/
 
 
 .env
-.env.local
-.env.*.local
-*.local
+.env.*
+!.env.example
 
 
 
@@ -25,7 +24,7 @@ build/
 
 
 
-.vscode/
+.vscode/*
 !.vscode/extensions.json
 .idea/
 *.suo
@@ -38,3 +37,24 @@ build/
 
 .DS_Store
 Thumbs.db
+
+
+*.tsbuildinfo
+.eslintcache
+.vite/
+
+
+coverage/
+
+
+
+
+AGENTS.md
+AI_SPEC.md
+API_SPEC.md
+ARCHITECTURE.md
+DATA_MODEL.md
+ENVIRONMENT.md
+PHASES.md
+PRD.md
+RULES.md
