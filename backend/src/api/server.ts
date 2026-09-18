@@ -4,6 +4,11 @@ import type Redis from 'ioredis';
 import pino, { type Logger } from 'pino';
 
 import { createApp } from './app';
+import { RealtimeRedisBridge } from './socket/realtime-bridge';
+import {
+  attachSocketServer,
+  type RealtimeSocketServer,
+} from './socket/socket-server';
 import { getEnvironment } from '../config/env';
 import { createLogger } from '../config/logger';
 import { connectMongo, disconnectMongo } from '../database/mongo';
@@ -12,11 +17,30 @@ import {
   createRedisConnection,
   disconnectRedis,
 } from '../queues/connection';
+import { realtimeChannelName } from '../realtime/channel';
 
-interface RunningServer {
+export interface RunningServer {
   httpServer: Server;
+  socketServer: RealtimeSocketServer;
   redisConnection: Redis;
+  redisSubscriber: Redis;
+  realtimeBridge: RealtimeRedisBridge;
   logger: Logger;
+}
+
+export interface ApiRedisConnections {
+  redisConnection: Redis;
+  redisSubscriber: Redis;
+}
+
+export function createApiRedisConnections(
+  redisUrl: string,
+  logger: Logger,
+): ApiRedisConnections {
+  return {
+    redisConnection: createRedisConnection(redisUrl, logger),
+    redisSubscriber: createRedisConnection(redisUrl, logger),
+  };
 }
 
 async function listen(httpServer: Server, port: number): Promise<void> {
@@ -46,14 +70,25 @@ async function closeHttpServer(httpServer: Server): Promise<void> {
   });
 }
 
+async function closeSocketServer(socketServer: RealtimeSocketServer): Promise<void> {
+  await socketServer.close();
+}
+
 export async function startServer(): Promise<RunningServer> {
   const environment = getEnvironment();
   const logger = createLogger(environment);
-  const redisConnection = createRedisConnection(environment.REDIS_URL, logger);
+  const { redisConnection, redisSubscriber } = createApiRedisConnections(
+    environment.REDIS_URL,
+    logger,
+  );
+  let httpServer: Server | undefined;
+  let socketServer: RealtimeSocketServer | undefined;
+  let realtimeBridge: RealtimeRedisBridge | undefined;
 
   try {
     await connectMongo(environment.MONGODB_URI, logger);
     await connectRedis(redisConnection, logger);
+    await connectRedis(redisSubscriber, logger);
 
     const app = createApp({
       logger,
@@ -66,29 +101,90 @@ export async function startServer(): Promise<RunningServer> {
         enabledRegions: environment.ENABLED_REGIONS,
       },
     });
-    const httpServer = createServer(app);
+    httpServer = createServer(app);
+    socketServer = attachSocketServer(httpServer, environment.CLIENT_ORIGIN, {
+      secret: environment.JWT_SECRET,
+      expiresIn: environment.JWT_EXPIRES_IN,
+    });
+    realtimeBridge = new RealtimeRedisBridge(
+      redisSubscriber,
+      realtimeChannelName(environment.BULLMQ_PREFIX),
+      socketServer,
+      logger,
+    );
+    await realtimeBridge.start();
 
     await listen(httpServer, environment.PORT);
     logger.info({ port: environment.PORT }, 'Sentinel API server started');
 
-    return { httpServer, redisConnection, logger };
+    return {
+      httpServer,
+      socketServer,
+      redisConnection,
+      redisSubscriber,
+      realtimeBridge,
+      logger,
+    };
   } catch (error: unknown) {
+    if (socketServer) {
+      await closeSocketServer(socketServer);
+    }
+
+    if (realtimeBridge) {
+      try {
+        await realtimeBridge.stop();
+      } catch (stopError: unknown) {
+        logger.error({ err: stopError }, 'Failed to stop realtime bridge after startup error');
+      }
+    }
+
+    redisSubscriber.disconnect(false);
     redisConnection.disconnect(false);
+
+    if (httpServer) {
+      await closeHttpServer(httpServer);
+    }
+
     await disconnectMongo(logger);
     throw error;
   }
 }
 
-async function shutdown(runningServer: RunningServer, signal: NodeJS.Signals): Promise<void> {
+export async function stopServer(
+  runningServer: RunningServer,
+  signal?: NodeJS.Signals,
+): Promise<void> {
   runningServer.logger.info({ signal }, 'Shutdown requested');
+  let failed = false;
+
+  try {
+    await closeSocketServer(runningServer.socketServer);
+  } catch (error: unknown) {
+    failed = true;
+    runningServer.logger.error({ err: error }, 'Failed to close Socket.IO server');
+  }
+
+  try {
+    await runningServer.realtimeBridge.stop();
+  } catch (error: unknown) {
+    failed = true;
+    runningServer.logger.error({ err: error }, 'Failed to stop realtime Redis bridge');
+  }
+
+  await disconnectRedis(runningServer.redisSubscriber, runningServer.logger);
+  await disconnectRedis(runningServer.redisConnection, runningServer.logger);
 
   try {
     await closeHttpServer(runningServer.httpServer);
-    await disconnectRedis(runningServer.redisConnection, runningServer.logger);
-    await disconnectMongo(runningServer.logger);
-    runningServer.logger.info('Sentinel API server stopped');
   } catch (error: unknown) {
-    runningServer.logger.error({ err: error }, 'Graceful shutdown failed');
+    failed = true;
+    runningServer.logger.error({ err: error }, 'Failed to close HTTP server');
+  }
+
+  await disconnectMongo(runningServer.logger);
+  runningServer.logger.info('Sentinel API server stopped');
+
+  if (failed) {
     process.exitCode = 1;
   }
 }
@@ -115,7 +211,7 @@ async function main(): Promise<void> {
     }
 
     isShuttingDown = true;
-    void shutdown(runningServer, signal);
+    void stopServer(runningServer, signal);
   };
 
   process.once('SIGINT', handleSignal);

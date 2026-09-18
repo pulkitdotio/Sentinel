@@ -9,6 +9,14 @@ import type { ProbeMonitorRepository } from '../modules/monitors/monitor-reposit
 import type { HttpChecker } from '../monitoring/http-checker';
 import { probeJobPayloadSchema, type ProbeJobPayload } from '../queues/jobs/probe';
 import type { IncidentEvaluationPublisher } from '../queues/incident-evaluation-publisher';
+import {
+  checkCompletedEventId,
+  type RealtimeDomainEvent,
+} from '../realtime/events';
+import {
+  NOOP_REALTIME_EVENT_PUBLISHER,
+  type RealtimeEventPublisher,
+} from '../realtime/publisher';
 
 export class PermanentProbeJobError extends Error {
   public constructor(message: string) {
@@ -29,6 +37,8 @@ export class ProbeProcessor {
     private readonly httpChecker: HttpChecker,
     private readonly incidentEvaluationPublisher: IncidentEvaluationPublisher,
     private readonly logger: Logger,
+    private readonly realtimeEventPublisher: RealtimeEventPublisher =
+      NOOP_REALTIME_EVENT_PUBLISHER,
     private readonly clock: () => Date = () => new Date(),
   ) {}
 
@@ -128,5 +138,39 @@ export class ProbeProcessor {
       },
       'Probe result persisted and queued for incident evaluation',
     );
+
+    await this.publishRealtimeBestEffort({
+      version: 1,
+      eventId: checkCompletedEventId(result.id),
+      userId: result.userId,
+      type: 'check.completed',
+      occurredAt: result.completedAt.toISOString(),
+      payload: {
+        checkResultId: result.id,
+        monitorId: result.monitorId,
+        region: result.region,
+        scheduledAt: result.scheduledAt.toISOString(),
+        success: result.success,
+        statusCode: result.statusCode,
+        latencyMs: result.latencyMs,
+        errorType: result.errorType,
+      },
+    });
+  }
+
+  private async publishRealtimeBestEffort(event: RealtimeDomainEvent): Promise<void> {
+    try {
+      await this.realtimeEventPublisher.publish(event);
+    } catch (error: unknown) {
+      this.logger.error(
+        {
+          err: error,
+          eventId: event.eventId,
+          eventType: event.type,
+          monitorId: event.payload.monitorId,
+        },
+        'Realtime event publishing failed after probe result became durable',
+      );
+    }
   }
 }

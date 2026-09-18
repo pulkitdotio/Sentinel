@@ -17,6 +17,8 @@ import type {
 } from '../../src/monitoring/http-checker';
 import type { IncidentEvaluationPublisher } from '../../src/queues/incident-evaluation-publisher';
 import type { ProbeJobPayload } from '../../src/queues/jobs/probe';
+import type { RealtimeDomainEvent } from '../../src/realtime/events';
+import type { RealtimeEventPublisher } from '../../src/realtime/publisher';
 import {
   PermanentProbeJobError,
   ProbeProcessor,
@@ -156,6 +158,20 @@ class FakeIncidentPublisher implements IncidentEvaluationPublisher {
   }
 }
 
+class FakeRealtimePublisher implements RealtimeEventPublisher {
+  public readonly events: RealtimeDomainEvent[] = [];
+  public error: Error | null = null;
+
+  public publish(event: RealtimeDomainEvent): Promise<void> {
+    if (this.error) {
+      return Promise.reject(this.error);
+    }
+
+    this.events.push(event);
+    return Promise.resolve();
+  }
+}
+
 function createContext(options: {
   currentMonitor?: MonitorRecord | null;
   checkOutcome?: HttpCheckOutcome;
@@ -167,6 +183,7 @@ function createContext(options: {
   const check = vi.fn().mockResolvedValue(options.checkOutcome ?? successOutcome);
   const httpChecker: HttpChecker = { check };
   const incidentPublisher = new FakeIncidentPublisher();
+  const realtimePublisher = new FakeRealtimePublisher();
   const times = [STARTED_AT, COMPLETED_AT];
   const processor = new ProbeProcessor(
     'mumbai',
@@ -175,6 +192,7 @@ function createContext(options: {
     httpChecker,
     incidentPublisher,
     pino({ enabled: false }),
+    realtimePublisher,
     () => times.shift() ?? COMPLETED_AT,
   );
 
@@ -183,6 +201,7 @@ function createContext(options: {
     monitorRepository,
     checkResultRepository,
     incidentPublisher,
+    realtimePublisher,
     check,
   };
 }
@@ -242,6 +261,27 @@ describe('ProbeProcessor', () => {
     expect(context.monitorRepository.lastCheckedUpdates).toEqual([
       { userId: USER_ID, monitorId: MONITOR_ID, completedAt: COMPLETED_AT },
     ]);
+    expect(context.realtimePublisher.events).toEqual([
+      {
+        version: 1,
+        eventId: `check:${CHECK_RESULT_ID}`,
+        userId: USER_ID,
+        type: 'check.completed',
+        occurredAt: COMPLETED_AT.toISOString(),
+        payload: {
+          checkResultId: CHECK_RESULT_ID,
+          monitorId: MONITOR_ID,
+          region: 'mumbai',
+          scheduledAt: SCHEDULED_AT.toISOString(),
+          success: true,
+          statusCode: 200,
+          latencyMs: 145,
+          errorType: null,
+        },
+      },
+    ]);
+    expect(JSON.stringify(context.realtimePublisher.events)).not.toContain('errorMetadata');
+    expect(JSON.stringify(context.realtimePublisher.events)).not.toContain('responseBody');
   });
 
   it('persists endpoint failures as results instead of throwing infrastructure errors', async () => {
@@ -291,6 +331,32 @@ describe('ProbeProcessor', () => {
     });
     expect(context.check).toHaveBeenCalledTimes(1);
     expect(context.incidentPublisher.checkResultIds).toEqual([CHECK_RESULT_ID]);
+  });
+
+  it('does not fail durable monitoring work when realtime publishing fails', async () => {
+    const context = createContext();
+    context.realtimePublisher.error = new Error('Realtime Redis unavailable');
+
+    await expect(context.processor.process(payload)).resolves.toEqual({
+      status: 'processed',
+      checkResultId: CHECK_RESULT_ID,
+    });
+    expect(context.check).toHaveBeenCalledTimes(1);
+    expect(context.checkResultRepository.records).toHaveLength(1);
+    expect(context.incidentPublisher.checkResultIds).toEqual([CHECK_RESULT_ID]);
+  });
+
+  it('uses a stable event id when an existing result is replayed', async () => {
+    const context = createContext();
+
+    await context.processor.process(payload);
+    await context.processor.process(payload);
+
+    expect(context.check).toHaveBeenCalledTimes(1);
+    expect(context.realtimePublisher.events.map((event) => event.eventId)).toEqual([
+      `check:${CHECK_RESULT_ID}`,
+      `check:${CHECK_RESULT_ID}`,
+    ]);
   });
 
   it('uses the winning persisted record when another execution wins the race', async () => {

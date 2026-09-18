@@ -72,6 +72,24 @@ export interface ProbeMonitorRepository {
   ): Promise<void>;
 }
 
+export interface MonitorEvaluationSnapshot {
+  status: MonitorStatus;
+  regions: string[];
+  failureThreshold: number;
+  recoveryThreshold: number;
+  latencyThresholdMs: number;
+}
+
+export interface IncidentMonitorRepository {
+  findOwnedById(userId: string, monitorId: string): Promise<MonitorRecord | null>;
+  updateEvaluationStatus(
+    userId: string,
+    monitorId: string,
+    snapshot: MonitorEvaluationSnapshot,
+    status: MonitorStatus,
+  ): Promise<boolean>;
+}
+
 function toMonitorRecord(monitor: MonitorDocument): MonitorRecord {
   return {
     id: monitor._id.toHexString(),
@@ -96,7 +114,11 @@ function toMonitorRecord(monitor: MonitorDocument): MonitorRecord {
 }
 
 export class MongooseMonitorRepository
-  implements MonitorRepository, MonitorSchedulerRepository, ProbeMonitorRepository
+  implements
+    MonitorRepository,
+    MonitorSchedulerRepository,
+    ProbeMonitorRepository,
+    IncidentMonitorRepository
 {
   public constructor(private readonly monitorModel: Model<Monitor> = MonitorModel) {}
 
@@ -176,5 +198,30 @@ export class MongooseMonitorRepository
     await this.monitorModel
       .updateOne({ _id: monitorId, userId }, { $max: { lastCheckedAt: completedAt } })
       .exec();
+  }
+
+  public async updateEvaluationStatus(
+    userId: string,
+    monitorId: string,
+    snapshot: MonitorEvaluationSnapshot,
+    status: MonitorStatus,
+  ): Promise<boolean> {
+    const result = await this.monitorModel
+      .updateOne(
+        {
+          _id: monitorId,
+          userId,
+          isPaused: false,
+          status: snapshot.status,
+          regions: snapshot.regions,
+          failureThreshold: snapshot.failureThreshold,
+          recoveryThreshold: snapshot.recoveryThreshold,
+          latencyThresholdMs: snapshot.latencyThresholdMs,
+        },
+        { $set: { status } },
+      )
+      .exec();
+
+    return result.modifiedCount === 1;
   }
 }

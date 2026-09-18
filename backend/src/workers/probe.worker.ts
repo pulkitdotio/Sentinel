@@ -17,6 +17,8 @@ import {
 import { BullMqIncidentEvaluationPublisher } from '../queues/incident-evaluation-publisher';
 import { PROBE_JOB_NAME, type ProbeJobPayload } from '../queues/jobs/probe';
 import { probeQueueName } from '../queues/names';
+import { realtimeChannelName } from '../realtime/channel';
+import { RedisRealtimeEventPublisher } from '../realtime/publisher';
 import {
   PermanentProbeJobError,
   ProbeProcessor,
@@ -121,6 +123,10 @@ async function runProbeWorker(signal: AbortSignal, logger: Logger): Promise<void
       redisConnection,
       environment.BULLMQ_PREFIX,
     );
+    const realtimeEventPublisher = new RedisRealtimeEventPublisher(
+      redisConnection,
+      realtimeChannelName(environment.BULLMQ_PREFIX),
+    );
     const httpChecker = new SafeHttpChecker({
       globalTimeoutMs: environment.GLOBAL_CHECK_TIMEOUT_MS,
       maxResponseBodyBytes: environment.MAX_RESPONSE_BODY_BYTES,
@@ -134,6 +140,7 @@ async function runProbeWorker(signal: AbortSignal, logger: Logger): Promise<void
       httpChecker,
       incidentEvaluationPublisher,
       logger,
+      realtimeEventPublisher,
     );
     const definition = createProbeWorkerDefinition(
       environment.PROBE_REGION,
