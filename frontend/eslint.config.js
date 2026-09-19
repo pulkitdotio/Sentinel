@@ -16,9 +16,13 @@ export default tseslint.config(
       },
       globals: {
         document: 'readonly',
+        fetch: 'readonly',
         HTMLElement: 'readonly',
         IntersectionObserver: 'readonly',
+        localStorage: 'readonly',
         MediaQueryListEvent: 'readonly',
+        Request: 'readonly',
+        Response: 'readonly',
         window: 'readonly',
       },
     },

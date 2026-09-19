@@ -1,7 +1,7 @@
 import { ArrowRight, BrainCircuit, CircleAlert, Sparkles } from 'lucide-react';
 
 import { Brand } from '../ui/Brand';
-import { ButtonLink } from '../ui/Button';
+import { ButtonRouteLink } from '../ui/Button';
 import { Container } from '../ui/Container';
 import { Section } from '../ui/Section';
 import { Surface } from '../ui/Surface';
@@ -37,7 +37,7 @@ export function AiAndFooter() {
           <p className="eyebrow">Built for the moment certainty matters</p>
           <h2>Your API does not fail in averages.</h2>
           <p>See the region, the evidence, and the exact moment health changed.</p>
-          <ButtonLink href="#top">Start with Sentinel <ArrowRight size={16} aria-hidden="true" /></ButtonLink>
+          <ButtonRouteLink to="/register">Start with Sentinel <ArrowRight size={16} aria-hidden="true" /></ButtonRouteLink>
         </Container>
       </section>
 

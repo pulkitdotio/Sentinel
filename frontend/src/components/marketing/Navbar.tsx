@@ -1,7 +1,8 @@
 import { ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 import { Brand } from '../ui/Brand';
-import { ButtonLink } from '../ui/Button';
+import { ButtonRouteLink } from '../ui/Button';
 import { Container } from '../ui/Container';
 
 export function Navbar() {
@@ -15,12 +16,10 @@ export function Navbar() {
           <a href="#architecture">Architecture</a>
         </nav>
         <div className="navbar__actions">
-          <span className="navbar__future" title="Authentication arrives in Frontend Phase 1">
-            Sign in
-          </span>
-          <ButtonLink href="#final-cta" className="navbar__cta">
+          <Link className="navbar__signin" to="/login">Sign in</Link>
+          <ButtonRouteLink to="/register" className="navbar__cta">
             Start monitoring <ArrowUpRight size={14} aria-hidden="true" />
-          </ButtonLink>
+          </ButtonRouteLink>
         </div>
       </Container>
     </header>
