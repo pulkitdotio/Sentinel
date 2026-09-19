@@ -1,31 +1,10 @@
-import { Router, type Request } from 'express';
-import type { ZodError } from 'zod';
+import { Router } from 'express';
 
 import { createAuthenticateMiddleware } from '../../api/middleware/authenticate';
-import { AppError } from '../../shared/errors/app-error';
+import { authenticatedUserId, requestValidationError } from '../../api/request';
 import type { JwtConfiguration } from '../auth/jwt';
 import { createMonitorSchemas, monitorIdParamsSchema } from './monitor.schemas';
 import type { MonitorService } from './monitor.service';
-
-function requestValidationError(error: ZodError): AppError {
-  const details = error.issues.map((issue) => ({
-    code: issue.code,
-    path: issue.path.join('.'),
-    message: issue.message,
-  }));
-
-  return new AppError(400, 'VALIDATION_ERROR', 'Request validation failed', details);
-}
-
-function authenticatedUserId(request: Request): string {
-  const userId = request.auth?.userId;
-
-  if (!userId) {
-    throw new AppError(401, 'AUTHENTICATION_REQUIRED', 'Authentication is required');
-  }
-
-  return userId;
-}
 
 export function createMonitorRouter(
   monitorService: MonitorService,

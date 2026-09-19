@@ -168,6 +168,17 @@ describe('AI analysis processor', () => {
     } as unknown as AiContextBuilder;
   });
 
+  it('rejects malformed job payloads permanently before repository access', async () => {
+    await expect(
+      processor().process(
+        { analysisId: 'not-an-object-id' },
+        { attemptsMade: 0, maxAttempts: 2 },
+      ),
+    ).rejects.toThrow(PermanentAiJobError);
+    expect(repository.current?.status).toBe('queued');
+    expect(analyzeMonitorHealth).not.toHaveBeenCalled();
+  });
+
   it('transitions queued to processing to completed and publishes after durable storage', async () => {
     const outcome = await processor().process(
       { analysisId: ANALYSIS_ID },

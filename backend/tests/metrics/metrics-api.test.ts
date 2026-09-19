@@ -287,6 +287,7 @@ describe('Phase 6 historical and metrics API', () => {
     app = createApp({
       logger: pino({ enabled: false }),
       isProduction: false,
+      clientOrigin: 'http://client.example.com',
       auth: { secret: SECRET, expiresIn: '7d' },
       monitors: {
         enabledRegions: ['mumbai', 'singapore', 'frankfurt'],

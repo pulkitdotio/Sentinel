@@ -96,6 +96,7 @@ function createTestContext(): {
   const app = createApp({
     logger: pino({ enabled: false }),
     isProduction: false,
+    clientOrigin: 'http://client.example.com',
     auth: {
       secret: JWT_SECRET,
       expiresIn: '7d',

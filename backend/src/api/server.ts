@@ -103,6 +103,7 @@ export async function startServer(): Promise<RunningServer> {
     const app = createApp({
       logger,
       isProduction: environment.NODE_ENV === 'production',
+      clientOrigin: environment.CLIENT_ORIGIN,
       auth: {
         secret: environment.JWT_SECRET,
         expiresIn: environment.JWT_EXPIRES_IN,
@@ -239,17 +240,28 @@ async function main(): Promise<void> {
   }
 
   let isShuttingDown = false;
+  let resolveShutdown: ((signal: NodeJS.Signals) => void) | undefined;
+  const shutdownRequested = new Promise<NodeJS.Signals>((resolve) => {
+    resolveShutdown = resolve;
+  });
   const handleSignal = (signal: NodeJS.Signals): void => {
     if (isShuttingDown) {
       return;
     }
 
     isShuttingDown = true;
-    void stopServer(runningServer, signal);
+    resolveShutdown?.(signal);
   };
 
   process.once('SIGINT', handleSignal);
   process.once('SIGTERM', handleSignal);
+
+  try {
+    await stopServer(runningServer, await shutdownRequested);
+  } finally {
+    process.off('SIGINT', handleSignal);
+    process.off('SIGTERM', handleSignal);
+  }
 }
 
 if (require.main === module) {

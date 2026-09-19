@@ -19,6 +19,11 @@
     "declarationMap": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "vitest.config.mts"],
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "vitest.config.mts",
+    "vitest.integration.config.mts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

@@ -1,8 +1,11 @@
-import pino, { type LoggerOptions } from 'pino';
+import pino, { type DestinationStream, type LoggerOptions } from 'pino';
 
 import type { Environment } from './env';
 
-export function createLogger(environment: Environment): pino.Logger {
+export function createLogger(
+  environment: Environment,
+  destination?: DestinationStream,
+): pino.Logger {
   const options: LoggerOptions = {
     level: environment.LOG_LEVEL,
     base: {
@@ -17,14 +20,20 @@ export function createLogger(environment: Environment): pino.Logger {
         'req.body.passwordHash',
         'password',
         'passwordHash',
+        'token',
+        'apiKey',
+        'authorization',
+        'cookie',
         '*.password',
         '*.passwordHash',
         '*.token',
         '*.apiKey',
+        '*.authorization',
+        '*.cookie',
       ],
       censor: '[REDACTED]',
     },
   };
 
-  return pino(options);
+  return pino(options, destination);
 }

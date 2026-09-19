@@ -219,6 +219,7 @@ describe('Phase 8 AI API', () => {
     return createApp({
       logger: pino({ enabled: false }),
       isProduction: false,
+      clientOrigin: 'http://client.example.com',
       auth: { secret: SECRET, expiresIn: '7d' },
       monitors: { enabledRegions: ['mumbai'], monitorRepository: new AiMonitorRepository() },
       incidents: { incidentRepository: incidents },

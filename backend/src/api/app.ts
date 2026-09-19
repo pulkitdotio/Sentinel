@@ -2,6 +2,7 @@ import express, { type Express } from 'express';
 import type { Logger } from 'pino';
 import pinoHttp from 'pino-http';
 
+import { createCorsMiddleware } from './middleware/cors';
 import { createErrorHandler } from './middleware/error-handler';
 import { notFoundHandler } from './middleware/not-found';
 import { healthRouter } from './routes/health';
@@ -61,6 +62,7 @@ export interface MonitorDependencies {
 export interface AppDependencies {
   logger: Logger;
   isProduction: boolean;
+  clientOrigin: string;
   auth: AuthDependencies;
   monitors: MonitorDependencies;
   incidents?: {
@@ -81,6 +83,7 @@ export interface AppDependencies {
 export function createApp({
   logger,
   isProduction,
+  clientOrigin,
   auth,
   monitors,
   incidents,
@@ -119,8 +122,9 @@ export function createApp({
   );
 
   app.disable('x-powered-by');
+  app.use(createCorsMiddleware(clientOrigin));
   app.use(pinoHttp({ logger }));
-  app.use(express.json());
+  app.use(express.json({ limit: '64kb' }));
 
   app.use('/api/v1/health', healthRouter);
   app.use('/api/v1/auth', createAuthRouter(authService, jwtConfiguration));

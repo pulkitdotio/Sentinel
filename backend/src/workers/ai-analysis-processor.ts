@@ -88,10 +88,16 @@ export class AiAnalysisProcessor {
   ) {}
 
   public async process(
-    input: AiAnalysisJobPayload,
+    input: unknown,
     retry: AiRetryContext,
   ): Promise<AiProcessingOutcome> {
-    const payload = aiAnalysisJobPayloadSchema.parse(input);
+    const parsedPayload = aiAnalysisJobPayloadSchema.safeParse(input);
+
+    if (!parsedPayload.success) {
+      throw new PermanentAiJobError('AI analysis job payload is invalid');
+    }
+
+    const payload: AiAnalysisJobPayload = parsedPayload.data;
     const existing = await this.analysisRepository.findById(payload.analysisId);
 
     if (!existing) {
