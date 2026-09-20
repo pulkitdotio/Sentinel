@@ -17,6 +17,13 @@ export const currentUserResponseSchema = z.strictObject({
   user: userSchema,
 });
 
+export const paginationSchema = z.strictObject({
+  page: z.number().int().positive(),
+  limit: z.number().int().positive(),
+  total: z.number().int().nonnegative(),
+  totalPages: z.number().int().nonnegative(),
+});
+
 export type User = z.infer<typeof userSchema>;
 export type AuthenticationResponse = z.infer<typeof authenticationResponseSchema>;
 

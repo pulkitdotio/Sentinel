@@ -86,7 +86,7 @@ describe('Sentinel authentication routes', () => {
     await userEvent.type(screen.getByLabelText('Password'), 'password');
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
-    expect(await screen.findByRole('heading', { name: 'Welcome back, Pulkit.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Monitoring overview' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/app');
     expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBe('registered-token');
     expect(Object.values(localStorage)).not.toContain('password');
@@ -125,7 +125,7 @@ describe('Sentinel authentication routes', () => {
     fetchMock.mockResolvedValue(jsonResponse({ token: 'login-token', user }));
     await completeLogin();
 
-    expect(await screen.findByRole('heading', { name: 'Welcome back, Pulkit.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Monitoring overview' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/app');
     expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBe('login-token');
   });
@@ -156,8 +156,8 @@ describe('Sentinel authentication routes', () => {
     render(<App />);
 
     expect(screen.getByText('Checking your workspace.')).toBeInTheDocument();
-    expect(await screen.findByRole('heading', { name: 'Welcome back, Pulkit.' })).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('heading', { name: 'Monitoring overview' })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     const requestInput = fetchMock.mock.calls[0]?.[0];
     const requestUrl =
       typeof requestInput === 'string'
@@ -199,7 +199,7 @@ describe('Sentinel authentication routes', () => {
     openRoute(path);
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'Welcome back, Pulkit.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Monitoring overview' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/app');
   });
 
@@ -209,7 +209,7 @@ describe('Sentinel authentication routes', () => {
     openRoute('/app');
     render(<App />);
 
-    expect(await screen.findByRole('heading', { name: 'Welcome back, Pulkit.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Monitoring overview' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Sign out' }));
 
     await waitFor(() => expect(window.location.pathname).toBe('/login'));
