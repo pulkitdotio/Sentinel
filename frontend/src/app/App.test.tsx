@@ -31,7 +31,7 @@ function mockSuccessfulSession(): void {
 }
 
 async function completeLogin(): Promise<void> {
-  await userEvent.type(screen.getByLabelText('Email'), 'PULKIT@EXAMPLE.COM ');
+  await userEvent.type(await screen.findByLabelText('Email'), 'PULKIT@EXAMPLE.COM ');
   await userEvent.type(screen.getByLabelText('Password'), 'password');
   await userEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 }
@@ -44,22 +44,22 @@ describe('Sentinel authentication routes', () => {
     openRoute('/');
   });
 
-  it('keeps the Phase 0 landing page available', () => {
+  it('keeps the Phase 0 landing page available', async () => {
     render(<App />);
-    expect(screen.getByRole('heading', { name: /know when your.?api breaks/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /know when your.?api breaks/i })).toBeInTheDocument();
     expect(screen.getByText('One endpoint. Three independent points of view.')).toBeInTheDocument();
   });
 
   it('navigates from the landing sign-in action to /login', async () => {
     render(<App />);
-    await userEvent.click(screen.getByRole('link', { name: 'Sign in' }));
+    await userEvent.click(await screen.findByRole('link', { name: 'Sign in' }));
     expect(await screen.findByRole('heading', { name: 'Welcome back.' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/login');
   });
 
   it('navigates from Start monitoring to /register', async () => {
     render(<App />);
-    await userEvent.click(screen.getByRole('link', { name: /start monitoring/i }));
+    await userEvent.click(await screen.findByRole('link', { name: /start monitoring/i }));
     expect(await screen.findByRole('heading', { name: 'Create your workspace.' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/register');
   });
@@ -68,7 +68,7 @@ describe('Sentinel authentication routes', () => {
     openRoute('/register');
     render(<App />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Create account' }));
 
     expect(await screen.findByText('Enter your name')).toBeInTheDocument();
     expect(screen.getByText('Enter your email address')).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe('Sentinel authentication routes', () => {
     openRoute('/register');
     render(<App />);
 
-    await userEvent.type(screen.getByLabelText('Name'), '  Pulkit  ');
+    await userEvent.type(await screen.findByLabelText('Name'), '  Pulkit  ');
     await userEvent.type(screen.getByLabelText('Email'), 'PULKIT@EXAMPLE.COM ');
     await userEvent.type(screen.getByLabelText('Password'), 'password');
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
@@ -108,7 +108,7 @@ describe('Sentinel authentication routes', () => {
     openRoute('/register');
     render(<App />);
 
-    await userEvent.type(screen.getByLabelText('Name'), 'Pulkit');
+    await userEvent.type(await screen.findByLabelText('Name'), 'Pulkit');
     await userEvent.type(screen.getByLabelText('Email'), 'pulkit@example.com');
     await userEvent.type(screen.getByLabelText('Password'), 'password');
     await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
@@ -191,6 +191,48 @@ describe('Sentinel authentication routes', () => {
     expect(await screen.findByRole('heading', { name: 'We could not reach Sentinel.' })).toBeInTheDocument();
     expect(screen.queryByText('Invalid email or password')).not.toBeInTheDocument();
     expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBe('possibly-valid-token');
+  });
+
+  it('clears an expired session rejected by a normal protected REST request', async () => {
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'expired-later');
+    fetchMock.mockImplementation((input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse({ user }));
+      return Promise.resolve(jsonResponse({
+        error: { code: 'INVALID_TOKEN', message: 'Invalid or expired authentication token' },
+      }, 401));
+    });
+    openRoute('/app');
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Welcome back.' })).toBeInTheDocument();
+    expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBeNull();
+    expect(window.location.pathname).toBe('/login');
+  });
+
+  it('keeps a valid token when a protected resource has a network failure', async () => {
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'still-valid');
+    fetchMock.mockImplementation((input) => {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      if (url.endsWith('/auth/me')) return Promise.resolve(jsonResponse({ user }));
+      return Promise.reject(new TypeError('network unavailable'));
+    });
+    openRoute('/app');
+    render(<App />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to reach Sentinel');
+    expect(localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)).toBe('still-valid');
+  });
+
+  it('keeps an unknown authenticated route inside the application shell', async () => {
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'stored-token');
+    mockSuccessfulSession();
+    openRoute('/app/unknown-view');
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'This workspace view does not exist.' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Workspace navigation' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Return to overview' })).toBeInTheDocument();
   });
 
   it.each(['/login', '/register'])('redirects an authenticated visitor from %s to /app', async (path) => {

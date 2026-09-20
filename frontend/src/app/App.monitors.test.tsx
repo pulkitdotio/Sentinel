@@ -198,7 +198,7 @@ describe('Sentinel monitor workspace', () => {
     renderAuthenticatedApp('/app/monitors/monitor-1/configuration');
 
     expect(await screen.findByRole('heading', { name: 'Production API' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Monitor name')).toHaveValue('Production API');
+    expect(await screen.findByLabelText('Monitor name')).toHaveValue('Production API');
     expect(screen.getByLabelText('Endpoint URL')).toHaveValue('https://api.example.com/health');
     expect(screen.getByLabelText('HTTP method')).toHaveValue('GET');
     expect(screen.getByLabelText('Expected status codes')).toHaveValue('200');
@@ -292,5 +292,30 @@ describe('Sentinel monitor workspace', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/app/monitors'));
     expect(await screen.findByRole('heading', { name: 'Monitors' })).toBeInTheDocument();
     expect(fetchMock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(true);
+  });
+
+  it('keeps a failed deletion in context and restores focus when the dialog closes', async () => {
+    mockAuthenticatedApi((url, init) => {
+      if (init?.method === 'DELETE') {
+        return jsonResponse({ error: { code: 'INTERNAL_ERROR', message: 'internal detail' } }, 503);
+      }
+      if (url.endsWith('/api/v1/monitors/monitor-1')) return jsonResponse({ monitor: monitor() });
+      throw new Error(`Unexpected request: ${url}`);
+    });
+    renderAuthenticatedApp('/app/monitors/monitor-1/configuration');
+    await screen.findByRole('heading', { name: 'Production API' });
+
+    const deleteTrigger = screen.getByRole('button', { name: 'Delete' });
+    await userEvent.click(deleteTrigger);
+    const dialog = screen.getByRole('alertdialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Delete monitor' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'Sentinel is temporarily unable to complete this request.',
+    );
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+    expect(deleteTrigger).toHaveFocus();
+    expect(window.location.pathname).toBe('/app/monitors/monitor-1/configuration');
   });
 });

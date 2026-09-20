@@ -54,15 +54,15 @@ export function MonitorIncidentsPage() {
       ) : incidentsQuery.data.incidents.length === 0 ? (
         <div className="operational-empty operational-empty--large"><strong>No incidents recorded</strong><span>No outage consensus has been recorded for this monitor.</span></div>
       ) : (
-        <div className="incident-table" role="table" aria-label="Incident history">
-          <div className="incident-table__head" role="row"><span role="columnheader">Status</span><span role="columnheader">Opened</span><span role="columnheader">Resolved / ongoing</span><span role="columnheader">Duration</span><span role="columnheader">Trigger</span><span /></div>
+        <div className="incident-table" aria-label="Incident history">
+          <div className="incident-table__head" aria-hidden="true"><span>Status</span><span>Opened</span><span>Resolved / ongoing</span><span>Duration</span><span>Trigger</span><span /></div>
           {incidentsQuery.data.incidents.map((incident) => (
-            <Link className="incident-table__row" role="row" to={`/app/incidents/${incident.id}`} key={incident.id}>
-              <span role="cell" data-label="Status" className={`incident-status incident-status--${incident.status}`}>{incident.status === 'open' ? 'Open' : 'Resolved'}</span>
-              <time role="cell" data-label="Opened" dateTime={incident.openedAt}>{formatExactDate(incident.openedAt)}</time>
-              <span role="cell" data-label="Resolved / ongoing">{incident.resolvedAt ? <time dateTime={incident.resolvedAt}>{formatExactDate(incident.resolvedAt)}</time> : 'Ongoing'}</span>
-              <code role="cell" data-label="Duration">{formatDuration(incident.openedAt, incident.resolvedAt)}</code>
-              <span role="cell" data-label="Trigger">{incident.triggerReason}</span>
+            <Link className="incident-table__row" to={`/app/incidents/${incident.id}`} key={incident.id} aria-label={`Open ${incident.status} incident from ${formatExactDate(incident.openedAt)}`}>
+              <span data-label="Status" className={`incident-status incident-status--${incident.status}`}>{incident.status === 'open' ? 'Open' : 'Resolved'}</span>
+              <time data-label="Opened" dateTime={incident.openedAt}>{formatExactDate(incident.openedAt)}</time>
+              <span data-label="Resolved / ongoing">{incident.resolvedAt ? <time dateTime={incident.resolvedAt}>{formatExactDate(incident.resolvedAt)}</time> : 'Ongoing'}</span>
+              <code data-label="Duration">{formatDuration(incident.openedAt, incident.resolvedAt)}</code>
+              <span data-label="Trigger">{incident.triggerReason}</span>
               <ArrowRight size={14} aria-hidden="true" />
             </Link>
           ))}

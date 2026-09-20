@@ -3,15 +3,22 @@ import { useEffect, useRef, type KeyboardEvent } from 'react';
 
 interface DeleteMonitorDialogProps {
   deleting: boolean;
+  error?: string | null;
   monitorName: string;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
-export function DeleteMonitorDialog({ deleting, monitorName, onCancel, onConfirm }: DeleteMonitorDialogProps) {
+export function DeleteMonitorDialog({ deleting, error, monitorName, onCancel, onConfirm }: DeleteMonitorDialogProps) {
   const cancelButton = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => cancelButton.current?.focus(), []);
+  useEffect(() => {
+    const previouslyFocused = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    cancelButton.current?.focus();
+    return () => previouslyFocused?.focus();
+  }, []);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape' && !deleting) {
@@ -50,6 +57,7 @@ export function DeleteMonitorDialog({ deleting, monitorName, onCancel, onConfirm
         </div>
         <h2 id="delete-dialog-title">Delete {monitorName}?</h2>
         <p id="delete-dialog-description">This monitor will be permanently deleted. This action cannot be undone.</p>
+        {error ? <p className="delete-dialog__error" role="alert">{error}</p> : null}
         <div className="delete-dialog__actions">
           <button ref={cancelButton} className="button button--secondary" type="button" disabled={deleting} onClick={onCancel}>Cancel</button>
           <button className="button button--danger" type="button" disabled={deleting} onClick={onConfirm}>{deleting ? 'Deleting…' : 'Delete monitor'}</button>

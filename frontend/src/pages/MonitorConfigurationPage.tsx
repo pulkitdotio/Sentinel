@@ -50,8 +50,12 @@ export function MonitorConfigurationPage() {
   };
 
   const confirmDelete = async () => {
-    await deleteMonitor.mutateAsync();
-    await navigate('/app/monitors', { replace: true });
+    try {
+      await deleteMonitor.mutateAsync();
+      await navigate('/app/monitors', { replace: true });
+    } catch {
+      // The dialog keeps the user in context and renders the safe mutation error below.
+    }
   };
 
   return (
@@ -85,6 +89,7 @@ export function MonitorConfigurationPage() {
         <DeleteMonitorDialog
           monitorName={monitor.name}
           deleting={deleteMonitor.isPending}
+          error={deleteMonitor.isError ? monitorErrorMessage(deleteMonitor.error) : null}
           onCancel={() => { if (!deleteMonitor.isPending) setDeleteOpen(false); }}
           onConfirm={() => void confirmDelete()}
         />

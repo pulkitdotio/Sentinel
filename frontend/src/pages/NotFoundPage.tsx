@@ -14,3 +14,18 @@ export function NotFoundPage() {
     </main>
   );
 }
+
+export function AppNotFoundPage() {
+  return (
+    <div className="workspace-page">
+      <section className="resource-not-found">
+        <p className="eyebrow">404 / Workspace route not found</p>
+        <h1>This workspace view does not exist.</h1>
+        <p>The requested Sentinel application route could not be found.</p>
+        <Link className="button button--primary" to="/app">
+          <ArrowLeft size={15} aria-hidden="true" /> Return to overview
+        </Link>
+      </section>
+    </div>
+  );
+}

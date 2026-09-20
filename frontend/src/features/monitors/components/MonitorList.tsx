@@ -9,34 +9,32 @@ export function MonitorList({ monitors, limit }: { monitors: Monitor[]; limit?: 
   const visibleMonitors = limit === undefined ? monitors : monitors.slice(0, limit);
 
   return (
-    <div className="monitor-table" role="table" aria-label="Monitors">
-      <div className="monitor-table__head" role="row">
-        <span role="columnheader">Name</span>
-        <span role="columnheader">Status</span>
-        <span role="columnheader">Method</span>
-        <span role="columnheader">Regions</span>
-        <span role="columnheader">Interval</span>
-        <span role="columnheader">Last checked</span>
+    <div className="monitor-table" aria-label="Monitors">
+      <div className="monitor-table__head" aria-hidden="true">
+        <span>Name</span>
+        <span>Status</span>
+        <span>Method</span>
+        <span>Regions</span>
+        <span>Interval</span>
+        <span>Last checked</span>
         <span aria-hidden="true" />
       </div>
       {visibleMonitors.map((monitor) => (
         <Link
           className="monitor-table__row"
           to={`/app/monitors/${monitor.id}`}
-          role="row"
           key={monitor.id}
           aria-label={`Open ${monitor.name}`}
         >
-          <span className="monitor-table__identity" role="cell">
+          <span className="monitor-table__identity">
             <strong>{monitor.name}</strong>
             <span title={monitor.url}>{monitor.url}</span>
           </span>
-          <span role="cell" data-label="Status"><MonitorStatus status={monitor.status} /></span>
-          <code role="cell" data-label="Method">{monitor.method}</code>
-          <span role="cell" data-label="Regions">{monitor.regions.length}</span>
-          <code role="cell" data-label="Interval">{monitor.intervalSeconds}s</code>
+          <span data-label="Status"><MonitorStatus status={monitor.status} /></span>
+          <code data-label="Method">{monitor.method}</code>
+          <span data-label="Regions">{monitor.regions.length}</span>
+          <code data-label="Interval">{monitor.intervalSeconds}s</code>
           <time
-            role="cell"
             data-label="Last checked"
             dateTime={monitor.lastCheckedAt ?? undefined}
             title={monitor.lastCheckedAt ? formatExactDate(monitor.lastCheckedAt) : undefined}

@@ -1,5 +1,5 @@
 import { Activity, LogOut, Menu, Monitor, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../auth/auth-context';
@@ -15,6 +15,40 @@ export function AppShell() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [navigationOpen, setNavigationOpen] = useState(false);
+  const [mobileNavigation, setMobileNavigation] = useState(
+    () => typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 850px)').matches,
+  );
+  const navigationRef = useRef<HTMLElement>(null);
+  const navigationToggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== 'function') return;
+    const mediaQuery = window.matchMedia('(max-width: 850px)');
+    const handleChange = (event: MediaQueryListEvent) => {
+      setMobileNavigation(event.matches);
+      if (!event.matches) setNavigationOpen(false);
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
+    if (!mobileNavigation || !navigationOpen) return;
+    navigationRef.current?.querySelector<HTMLElement>('a[href]')?.focus();
+
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setNavigationOpen(false);
+      navigationToggleRef.current?.focus();
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [mobileNavigation, navigationOpen]);
+
+  const closeNavigation = (restoreFocus: boolean) => {
+    setNavigationOpen(false);
+    if (restoreFocus) window.setTimeout(() => navigationToggleRef.current?.focus(), 0);
+  };
 
   const signOut = async () => {
     await logout();
@@ -29,6 +63,7 @@ export function AppShell() {
         <div className="app-topbar__actions">
           <RealtimeStatus className="realtime-status--mobile" />
           <button
+            ref={navigationToggleRef}
             type="button"
             className="app-icon-button"
             aria-label={navigationOpen ? 'Close navigation' : 'Open navigation'}
@@ -46,11 +81,17 @@ export function AppShell() {
           className="app-navigation-scrim"
           type="button"
           aria-label="Close navigation"
-          onClick={() => setNavigationOpen(false)}
+          onClick={() => closeNavigation(true)}
         />
       ) : null}
 
-      <aside id="app-navigation" className={`app-sidebar${navigationOpen ? ' is-open' : ''}`}>
+      <aside
+        ref={navigationRef}
+        id="app-navigation"
+        className={`app-sidebar${navigationOpen ? ' is-open' : ''}`}
+        aria-hidden={mobileNavigation && !navigationOpen ? true : undefined}
+        inert={mobileNavigation && !navigationOpen}
+      >
         <div className="app-sidebar__brand"><Brand to="/app" /></div>
         <nav className="app-navigation" aria-label="Workspace navigation">
           <p>Workspace</p>
@@ -59,7 +100,7 @@ export function AppShell() {
               key={to}
               to={to}
               end={end}
-              onClick={() => setNavigationOpen(false)}
+              onClick={() => closeNavigation(false)}
               className={({ isActive }) => `app-navigation__link${isActive ? ' is-active' : ''}`}
             >
               <Icon size={16} aria-hidden="true" />

@@ -1,23 +1,26 @@
+import { lazy, Suspense, type ReactNode } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 
 import { useAuth } from '../auth/auth-context';
-import { AuthLayout } from '../components/auth/AuthLayout';
 import { SessionGate } from '../components/auth/SessionGate';
-import { AppShell } from '../components/app/AppShell';
-import { LandingPage } from '../pages/LandingPage';
-import { LoginPage } from '../pages/LoginPage';
-import { IncidentDetailPage } from '../pages/IncidentDetailPage';
-import { MonitorChecksPage } from '../pages/MonitorChecksPage';
-import { MonitorConfigurationPage } from '../pages/MonitorConfigurationPage';
-import { MonitorDetailPage } from '../pages/MonitorDetailPage';
-import { MonitorIncidentsPage } from '../pages/MonitorIncidentsPage';
-import { MonitorOverviewPage } from '../pages/MonitorOverviewPage';
-import { MonitorsPage } from '../pages/MonitorsPage';
-import { NewMonitorPage } from '../pages/NewMonitorPage';
-import { NotFoundPage } from '../pages/NotFoundPage';
-import { OverviewPage } from '../pages/OverviewPage';
-import { RegisterPage } from '../pages/RegisterPage';
-import { RealtimeProvider } from '../realtime/RealtimeProvider';
+import { ContentLoadingFallback, RouteLoadingFallback } from './RouteLoadingFallback';
+
+const AuthLayout = lazy(() => import('../components/auth/AuthLayout').then((module) => ({ default: module.AuthLayout })));
+const ProtectedAppLayout = lazy(() => import('./ProtectedAppLayout').then((module) => ({ default: module.ProtectedAppLayout })));
+const LandingPage = lazy(() => import('../pages/LandingPage').then((module) => ({ default: module.LandingPage })));
+const LoginPage = lazy(() => import('../pages/LoginPage').then((module) => ({ default: module.LoginPage })));
+const RegisterPage = lazy(() => import('../pages/RegisterPage').then((module) => ({ default: module.RegisterPage })));
+const OverviewPage = lazy(() => import('../pages/OverviewPage').then((module) => ({ default: module.OverviewPage })));
+const MonitorsPage = lazy(() => import('../pages/MonitorsPage').then((module) => ({ default: module.MonitorsPage })));
+const NewMonitorPage = lazy(() => import('../pages/NewMonitorPage').then((module) => ({ default: module.NewMonitorPage })));
+const MonitorDetailPage = lazy(() => import('../pages/MonitorDetailPage').then((module) => ({ default: module.MonitorDetailPage })));
+const MonitorOverviewPage = lazy(() => import('../pages/MonitorOverviewPage').then((module) => ({ default: module.MonitorOverviewPage })));
+const MonitorChecksPage = lazy(() => import('../pages/MonitorChecksPage').then((module) => ({ default: module.MonitorChecksPage })));
+const MonitorIncidentsPage = lazy(() => import('../pages/MonitorIncidentsPage').then((module) => ({ default: module.MonitorIncidentsPage })));
+const MonitorConfigurationPage = lazy(() => import('../pages/MonitorConfigurationPage').then((module) => ({ default: module.MonitorConfigurationPage })));
+const IncidentDetailPage = lazy(() => import('../pages/IncidentDetailPage').then((module) => ({ default: module.IncidentDetailPage })));
+const NotFoundPage = lazy(() => import('../pages/NotFoundPage').then((module) => ({ default: module.NotFoundPage })));
+const AppNotFoundPage = lazy(() => import('../pages/NotFoundPage').then((module) => ({ default: module.AppNotFoundPage })));
 
 function ProtectedRoute() {
   const { status } = useAuth();
@@ -35,34 +38,43 @@ function GuestOnlyRoute() {
   return status === 'authenticated' ? <Navigate to="/app" replace /> : <Outlet />;
 }
 
+function FullPageRoute({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<RouteLoadingFallback />}>{children}</Suspense>;
+}
+
+function ContentRoute({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<ContentLoadingFallback />}>{children}</Suspense>;
+}
+
 export function AppRoutes() {
   const { status } = useAuth();
   if (status === 'checking') return <SessionGate />;
 
   return (
     <Routes>
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<FullPageRoute><LandingPage /></FullPageRoute>} />
       <Route element={<GuestOnlyRoute />}>
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+        <Route element={<FullPageRoute><AuthLayout /></FullPageRoute>}>
+          <Route path="/login" element={<ContentRoute><LoginPage /></ContentRoute>} />
+          <Route path="/register" element={<ContentRoute><RegisterPage /></ContentRoute>} />
         </Route>
       </Route>
       <Route element={<ProtectedRoute />}>
-        <Route path="/app" element={<RealtimeProvider><AppShell /></RealtimeProvider>}>
-          <Route index element={<OverviewPage />} />
-          <Route path="monitors" element={<MonitorsPage />} />
-          <Route path="monitors/new" element={<NewMonitorPage />} />
-          <Route path="monitors/:monitorId" element={<MonitorDetailPage />}>
-            <Route index element={<MonitorOverviewPage />} />
-            <Route path="checks" element={<MonitorChecksPage />} />
-            <Route path="incidents" element={<MonitorIncidentsPage />} />
-            <Route path="configuration" element={<MonitorConfigurationPage />} />
+        <Route path="/app" element={<FullPageRoute><ProtectedAppLayout /></FullPageRoute>}>
+          <Route index element={<ContentRoute><OverviewPage /></ContentRoute>} />
+          <Route path="monitors" element={<ContentRoute><MonitorsPage /></ContentRoute>} />
+          <Route path="monitors/new" element={<ContentRoute><NewMonitorPage /></ContentRoute>} />
+          <Route path="monitors/:monitorId" element={<ContentRoute><MonitorDetailPage /></ContentRoute>}>
+            <Route index element={<ContentRoute><MonitorOverviewPage /></ContentRoute>} />
+            <Route path="checks" element={<ContentRoute><MonitorChecksPage /></ContentRoute>} />
+            <Route path="incidents" element={<ContentRoute><MonitorIncidentsPage /></ContentRoute>} />
+            <Route path="configuration" element={<ContentRoute><MonitorConfigurationPage /></ContentRoute>} />
           </Route>
-          <Route path="incidents/:incidentId" element={<IncidentDetailPage />} />
+          <Route path="incidents/:incidentId" element={<ContentRoute><IncidentDetailPage /></ContentRoute>} />
+          <Route path="*" element={<ContentRoute><AppNotFoundPage /></ContentRoute>} />
         </Route>
       </Route>
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path="*" element={<FullPageRoute><NotFoundPage /></FullPageRoute>} />
     </Routes>
   );
 }

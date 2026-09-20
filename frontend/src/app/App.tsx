@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { BrowserRouter } from 'react-router-dom';
 
 import { AuthProvider } from '../auth/AuthProvider';
+import { ApplicationErrorBoundary } from './ApplicationErrorBoundary';
 import { AppRoutes } from './AppRoutes';
 import { createSentinelQueryClient } from './query-client';
 import { RouteFocusManager } from './RouteFocusManager';
@@ -13,10 +14,12 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <RouteFocusManager />
-          <AppRoutes />
-        </AuthProvider>
+        <ApplicationErrorBoundary>
+          <AuthProvider>
+            <RouteFocusManager />
+            <AppRoutes />
+          </AuthProvider>
+        </ApplicationErrorBoundary>
       </BrowserRouter>
     </QueryClientProvider>
   );

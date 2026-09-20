@@ -37,7 +37,7 @@ export function RegisterPage() {
       <div className="auth-form__heading">
         <p className="eyebrow">Begin monitoring</p>
         <h1>Create your workspace.</h1>
-        <p>Start with a secure account. Your first monitor comes in the next phase.</p>
+        <p>Start with a secure account, then add your first endpoint to the monitoring workspace.</p>
       </div>
       <form className="auth-form" onSubmit={(event) => void submit(event)} noValidate>
         <div className="form-field">

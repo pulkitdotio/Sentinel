@@ -15,6 +15,7 @@ export function CheckTable({ checks, compact = false }: { checks: CheckResult[];
   return (
     <div className={`check-table-wrap${compact ? ' check-table-wrap--compact' : ''}`}>
       <table className="check-table">
+        <caption className="sr-only">Regional check history</caption>
         <thead>
           <tr>
             <th scope="col">Time</th>

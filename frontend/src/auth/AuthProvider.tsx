@@ -24,34 +24,19 @@ import { AuthContext, type AuthContextValue, type AuthStatus } from './auth-cont
 
 const AUTH_QUERY_KEY = ['auth', 'me'] as const;
 
-function isRejectedToken(error: unknown): boolean {
-  return (
-    error instanceof ApiError &&
-    error.status === 401 &&
-    (error.code === 'INVALID_TOKEN' || error.code === 'AUTHENTICATION_REQUIRED')
-  );
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const token = useSyncExternalStore(subscribeToAuthToken, getAuthToken, () => null);
   const sessionQuery = useQuery({
     queryKey: AUTH_QUERY_KEY,
-    queryFn: async () => {
-      try {
-        return await authApi.me();
-      } catch (error: unknown) {
-        if (isRejectedToken(error)) clearAuthToken();
-        throw error;
-      }
-    },
+    queryFn: () => authApi.me(),
     enabled: token !== null,
     retry: false,
     staleTime: Number.POSITIVE_INFINITY,
   });
 
   useEffect(() => {
-    if (token === null) queryClient.removeQueries({ queryKey: AUTH_QUERY_KEY });
+    if (token === null) queryClient.clear();
   }, [queryClient, token]);
 
   const establishSession = useCallback(

@@ -1,6 +1,6 @@
 import type { ZodType } from 'zod';
 
-import { getAuthToken } from '../auth/auth-token';
+import { clearAuthToken, getAuthToken } from '../auth/auth-token';
 import { FrontendEnvironmentError, getFrontendEnvironment } from '../config/environment';
 
 interface BackendErrorEnvelope {
@@ -43,6 +43,11 @@ export interface HttpClient {
 interface HttpClientDependencies {
   fetchImplementation?: typeof fetch;
   getToken?: () => string | null;
+  onAuthenticationRejected?: () => void;
+}
+
+function isAuthenticationRejection(status: number, code: string): boolean {
+  return status === 401 && (code === 'INVALID_TOKEN' || code === 'AUTHENTICATION_REQUIRED');
 }
 
 function isBackendErrorEnvelope(value: unknown): value is BackendErrorEnvelope {
@@ -74,6 +79,7 @@ async function parseResponseBody(response: Response): Promise<unknown> {
 export function createHttpClient({
   fetchImplementation,
   getToken = getAuthToken,
+  onAuthenticationRejected = clearAuthToken,
 }: HttpClientDependencies = {}): HttpClient {
   return {
     async request<TResponse>(path: string, options: RequestOptions<TResponse> = {}): Promise<TResponse> {
@@ -108,6 +114,9 @@ export function createHttpClient({
 
       if (!response.ok) {
         if (isBackendErrorEnvelope(data)) {
+          if (token && isAuthenticationRejection(response.status, data.error.code)) {
+            onAuthenticationRejected();
+          }
           throw new ApiError(response.status, data.error.code, data.error.message, data.error.details);
         }
 
