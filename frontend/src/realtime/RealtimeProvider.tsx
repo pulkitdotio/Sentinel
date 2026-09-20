@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } fr
 
 import { getAuthToken, subscribeToAuthToken } from '../auth/auth-token';
 import {
+  aiAnalysisCompletedEventSchema,
+  aiAnalysisFailedEventSchema,
   checkCompletedEventSchema,
   incidentOpenedEventSchema,
   incidentResolvedEventSchema,
@@ -12,6 +14,7 @@ import { RealtimeContext, type RealtimeConnectionStatus } from './realtime-conte
 import {
   patchMonitorStatus,
   reconcileAfterReconnect,
+  refreshAiAnalysis,
   refreshAfterCheck,
   refreshAfterIncidentOpened,
   refreshAfterIncidentResolved,
@@ -107,6 +110,18 @@ function RealtimeConnection({
       void refreshAfterIncidentResolved(queryClient, parsed.data.monitorId, parsed.data.incidentId);
     };
 
+    const handleAiAnalysisCompleted = (payload: unknown) => {
+      const parsed = aiAnalysisCompletedEventSchema.safeParse(payload);
+      if (!parsed.success) return;
+      void refreshAiAnalysis(queryClient, parsed.data.analysisId);
+    };
+
+    const handleAiAnalysisFailed = (payload: unknown) => {
+      const parsed = aiAnalysisFailedEventSchema.safeParse(payload);
+      if (!parsed.success) return;
+      void refreshAiAnalysis(queryClient, parsed.data.analysisId);
+    };
+
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
     socket.on('connect_error', handleConnectError);
@@ -114,6 +129,8 @@ function RealtimeConnection({
     socket.on('monitor.status_changed', handleMonitorStatusChanged);
     socket.on('incident.opened', handleIncidentOpened);
     socket.on('incident.resolved', handleIncidentResolved);
+    socket.on('ai.analysis.completed', handleAiAnalysisCompleted);
+    socket.on('ai.analysis.failed', handleAiAnalysisFailed);
 
     return () => {
       disposed = true;
@@ -126,6 +143,8 @@ function RealtimeConnection({
       socket.off('monitor.status_changed', handleMonitorStatusChanged);
       socket.off('incident.opened', handleIncidentOpened);
       socket.off('incident.resolved', handleIncidentResolved);
+      socket.off('ai.analysis.completed', handleAiAnalysisCompleted);
+      socket.off('ai.analysis.failed', handleAiAnalysisFailed);
       socket.disconnect();
     };
   }, [accessToken, queryClient]);

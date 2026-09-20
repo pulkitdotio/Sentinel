@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AUTH_TOKEN_STORAGE_KEY, setAuthToken } from '../auth/auth-token';
+import { aiAnalysisKeys } from '../features/ai/api/ai-keys';
 import { monitorCheckKeys } from '../features/checks/api/check-keys';
 import { incidentKeys, monitorIncidentKeys } from '../features/incidents/api/incident-keys';
 import { monitorMetricKeys } from '../features/metrics/api/metric-keys';
@@ -23,6 +24,7 @@ const MONITOR_A = 'aaaaaaaaaaaaaaaaaaaaaaaa';
 const MONITOR_B = 'bbbbbbbbbbbbbbbbbbbbbbbb';
 const CHECK_ID = 'cccccccccccccccccccccccc';
 const INCIDENT_ID = 'dddddddddddddddddddddddd';
+const ANALYSIS_ID = 'eeeeeeeeeeeeeeeeeeeeeeee';
 const RANGE: IsoTimeRange = {
   from: '2026-09-19T10:00:00.000Z',
   to: '2026-09-20T10:00:00.000Z',
@@ -340,6 +342,61 @@ describe('realtime validation and query reconciliation', () => {
       openedAt: 'not-a-time',
       triggerReason: '',
     }));
+    expect(invalidate).not.toHaveBeenCalled();
+  });
+
+  it('accepts valid AI terminal events and invalidates only the matching analysis', () => {
+    const queryClient = createQueryClient();
+    seedRealtimeQueries(queryClient);
+    queryClient.setQueryData(aiAnalysisKeys.detail(ANALYSIS_ID), { marker: 'analysis' });
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
+    renderRealtime(queryClient);
+    const socket = latestSocket();
+
+    act(() => socket.emitServer('ai.analysis.completed', {
+      analysisId: ANALYSIS_ID,
+      resourceType: 'monitor',
+      resourceId: MONITOR_A,
+    }));
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(invalidate).toHaveBeenLastCalledWith({
+      queryKey: aiAnalysisKeys.detail(ANALYSIS_ID),
+      exact: true,
+    });
+
+    invalidate.mockClear();
+    act(() => socket.emitServer('ai.analysis.failed', {
+      analysisId: ANALYSIS_ID,
+      resourceType: 'incident',
+      resourceId: INCIDENT_ID,
+      failureCode: 'AI_PROVIDER_TIMEOUT',
+    }));
+    expect(invalidate).toHaveBeenCalledTimes(1);
+    expect(invalidate).toHaveBeenLastCalledWith({
+      queryKey: aiAnalysisKeys.detail(ANALYSIS_ID),
+      exact: true,
+    });
+  });
+
+  it('ignores malformed AI events without refreshing core or analysis data', () => {
+    const queryClient = createQueryClient();
+    const invalidate = vi.spyOn(queryClient, 'invalidateQueries').mockResolvedValue();
+    renderRealtime(queryClient);
+    const socket = latestSocket();
+
+    act(() => {
+      socket.emitServer('ai.analysis.completed', {
+        analysisId: 'invalid',
+        resourceType: 'monitor',
+        resourceId: MONITOR_A,
+      });
+      socket.emitServer('ai.analysis.failed', {
+        analysisId: ANALYSIS_ID,
+        resourceType: 'monitor',
+        resourceId: MONITOR_A,
+        failureCode: 'RAW_PROVIDER_FAILURE',
+      });
+    });
     expect(invalidate).not.toHaveBeenCalled();
   });
 

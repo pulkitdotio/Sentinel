@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { CheckTable } from '../features/checks/components/CheckTable';
 import { RecentLatencyChart } from '../features/checks/components/RecentLatencyChart';
 import { useMonitorChecks } from '../features/checks/hooks/use-checks';
+import { MonitorAiInsight } from '../features/ai/components/MonitorAiInsight';
 import type { MonitorMetrics } from '../features/metrics/api/metric-contracts';
 import { OperationalError, OperationalSkeleton } from '../features/metrics/components/OperationalStates';
 import { TimeRangeControl } from '../features/metrics/components/TimeRangeControl';
@@ -105,6 +106,8 @@ function MetricsContent({ metrics, monitorId }: { metrics: MonitorMetrics; monit
           ))}
         </div>
       </section>
+
+      <MonitorAiInsight monitorId={monitorId} />
 
       <section className="operational-section">
         <div className="operational-section__heading">

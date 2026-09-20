@@ -2,6 +2,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 
 import { ApiError } from '../api/http-client';
+import { IncidentAiSummary } from '../features/ai/components/IncidentAiSummary';
 import { checkErrorLabel } from '../features/checks/check-formatters';
 import type { Incident } from '../features/incidents/api/incident-contracts';
 import { useIncident } from '../features/incidents/hooks/use-incidents';
@@ -76,6 +77,8 @@ function IncidentDetail({ incident }: { incident: Incident }) {
           ))}
         </ol>
       </section>
+
+      <IncidentAiSummary incident={incident} />
     </div>
   );
 }

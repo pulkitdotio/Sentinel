@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { checkErrorTypeSchema } from '../features/checks/api/check-error-contract';
 import { MONITOR_STATUSES } from '../features/monitors/api/monitor-contracts';
+import { aiFailureCodeSchema } from '../features/ai/api/ai-contracts';
 
 const objectIdSchema = z.string().regex(/^[a-f\d]{24}$/i, 'must be a MongoDB object id');
 const timestampSchema = z.iso.datetime({ offset: true });
@@ -52,16 +53,33 @@ export const incidentResolvedEventSchema = z.strictObject({
   triggerReason: z.string().trim().min(1).max(100),
 });
 
+export const aiAnalysisCompletedEventSchema = z.strictObject({
+  analysisId: objectIdSchema,
+  resourceType: z.enum(['monitor', 'incident']),
+  resourceId: objectIdSchema,
+});
+
+export const aiAnalysisFailedEventSchema = z.strictObject({
+  analysisId: objectIdSchema,
+  resourceType: z.enum(['monitor', 'incident']),
+  resourceId: objectIdSchema,
+  failureCode: aiFailureCodeSchema,
+});
+
 export type CheckCompletedEvent = z.infer<typeof checkCompletedEventSchema>;
 export type MonitorStatusChangedEvent = z.infer<typeof monitorStatusChangedEventSchema>;
 export type IncidentOpenedEvent = z.infer<typeof incidentOpenedEventSchema>;
 export type IncidentResolvedEvent = z.infer<typeof incidentResolvedEventSchema>;
+export type AiAnalysisCompletedEvent = z.infer<typeof aiAnalysisCompletedEventSchema>;
+export type AiAnalysisFailedEvent = z.infer<typeof aiAnalysisFailedEventSchema>;
 
 export interface ServerToClientEvents {
   'check.completed': (payload: CheckCompletedEvent) => void;
   'monitor.status_changed': (payload: MonitorStatusChangedEvent) => void;
   'incident.opened': (payload: IncidentOpenedEvent) => void;
   'incident.resolved': (payload: IncidentResolvedEvent) => void;
+  'ai.analysis.completed': (payload: AiAnalysisCompletedEvent) => void;
+  'ai.analysis.failed': (payload: AiAnalysisFailedEvent) => void;
 }
 
 export type ClientToServerEvents = Record<never, never>;

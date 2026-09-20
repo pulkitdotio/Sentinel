@@ -1,5 +1,6 @@
 import type { Query, QueryClient } from '@tanstack/react-query';
 
+import { aiAnalysisKeys } from '../features/ai/api/ai-keys';
 import { monitorCheckKeys } from '../features/checks/api/check-keys';
 import { incidentKeys, monitorIncidentKeys } from '../features/incidents/api/incident-keys';
 import { monitorMetricKeys } from '../features/metrics/api/metric-keys';
@@ -71,12 +72,23 @@ export async function refreshAfterIncidentResolved(
   ]);
 }
 
+export async function refreshAiAnalysis(
+  queryClient: QueryClient,
+  analysisId: string,
+): Promise<void> {
+  await queryClient.invalidateQueries({
+    queryKey: aiAnalysisKeys.detail(analysisId),
+    exact: true,
+  });
+}
+
 const reconnectActiveRoots = new Set<string>([
   monitorKeys.all[0],
   monitorMetricKeys.all[0],
   monitorCheckKeys.all[0],
   monitorIncidentKeys.all[0],
   incidentKeys.all[0],
+  aiAnalysisKeys.all[0],
 ]);
 
 function isActiveRealtimeQuery(query: Query): boolean {
