@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../auth/auth-context';
+import { RealtimeStatus } from '../../realtime/RealtimeStatus';
 import { Brand } from '../ui/Brand';
 
 const navigation = [
@@ -25,16 +26,19 @@ export function AppShell() {
       <a className="skip-link" href="#app-content">Skip to workspace</a>
       <header className="app-topbar">
         <Brand to="/app" />
-        <button
-          type="button"
-          className="app-icon-button"
-          aria-label={navigationOpen ? 'Close navigation' : 'Open navigation'}
-          aria-expanded={navigationOpen}
-          aria-controls="app-navigation"
-          onClick={() => setNavigationOpen((open) => !open)}
-        >
-          {navigationOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
-        </button>
+        <div className="app-topbar__actions">
+          <RealtimeStatus className="realtime-status--mobile" />
+          <button
+            type="button"
+            className="app-icon-button"
+            aria-label={navigationOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={navigationOpen}
+            aria-controls="app-navigation"
+            onClick={() => setNavigationOpen((open) => !open)}
+          >
+            {navigationOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
+          </button>
+        </div>
       </header>
 
       {navigationOpen ? (
@@ -63,6 +67,7 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
+        <RealtimeStatus className="realtime-status--desktop" />
         <div className="app-sidebar__profile">
           <div className="app-user">
             <span aria-hidden="true">{user?.name.trim().charAt(0).toUpperCase()}</span>

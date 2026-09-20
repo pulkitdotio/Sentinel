@@ -17,6 +17,7 @@ import { NewMonitorPage } from '../pages/NewMonitorPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { OverviewPage } from '../pages/OverviewPage';
 import { RegisterPage } from '../pages/RegisterPage';
+import { RealtimeProvider } from '../realtime/RealtimeProvider';
 
 function ProtectedRoute() {
   const { status } = useAuth();
@@ -48,7 +49,7 @@ export function AppRoutes() {
         </Route>
       </Route>
       <Route element={<ProtectedRoute />}>
-        <Route path="/app" element={<AppShell />}>
+        <Route path="/app" element={<RealtimeProvider><AppShell /></RealtimeProvider>}>
           <Route index element={<OverviewPage />} />
           <Route path="monitors" element={<MonitorsPage />} />
           <Route path="monitors/new" element={<NewMonitorPage />} />

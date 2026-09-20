@@ -2,6 +2,13 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
+import { resetFakeSocketIo } from './fake-socket-io-client';
+
+vi.mock('socket.io-client', async () => {
+  const fakeClient = await import('./fake-socket-io-client');
+  return { io: fakeClient.io };
+});
+
 class TestIntersectionObserver implements IntersectionObserver {
   public readonly root = null;
   public readonly rootMargin = '0px';
@@ -18,6 +25,8 @@ vi.stubGlobal('IntersectionObserver', TestIntersectionObserver);
 
 afterEach(() => {
   cleanup();
+  resetFakeSocketIo();
+  vi.useRealTimers();
   window.localStorage.clear();
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
