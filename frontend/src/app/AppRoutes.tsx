@@ -43,7 +43,7 @@ function FullPageRoute({ children }: { children: ReactNode }) {
 }
 
 function ContentRoute({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<ContentLoadingFallback />}>{children}</Suspense>;
+  return <Suspense fallback={<ContentLoadingFallback />}><div className="app-page-transition" data-app-motion="page">{children}</div></Suspense>;
 }
 
 export function AppRoutes() {

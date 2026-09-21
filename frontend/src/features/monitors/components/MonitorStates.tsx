@@ -1,4 +1,4 @@
-import { CircleOff, Plus, RefreshCw } from 'lucide-react';
+import { CircleAlert, CircleOff, Plus, RefreshCw } from 'lucide-react';
 
 import { ButtonRouteLink } from '../../../components/ui/Button';
 
@@ -45,6 +45,7 @@ interface MonitorErrorStateProps {
 export function MonitorErrorState({ message, onRetry }: MonitorErrorStateProps) {
   return (
     <section className="monitor-error" role="alert">
+      <div className="operational-state-icon operational-state-icon--error" aria-hidden="true"><CircleAlert size={19} /></div>
       <span>Request interrupted</span>
       <h2>Monitor data is unavailable.</h2>
       <p>{message}</p>

@@ -47,7 +47,10 @@ export function IncidentAiSummary({ incident }: { incident: Incident }) {
         onRetry={() => retryTracking ? void analysisQuery.refetch() : void generate()}
       />
       {analysis?.type === 'incident_summary' && analysis.status === 'completed' ? (
-        <article className="ai-result" aria-labelledby={`ai-result-${analysis.id}`}>
+        <article
+          className="ai-result app-state-enter"
+          aria-labelledby={`ai-result-${analysis.id}`}
+        >
           <header><div><p className="eyebrow">Advisory incident analysis</p><h3 id={`ai-result-${analysis.id}`}>Resolved incident summary</h3></div></header>
           <div className="ai-result__columns ai-result__columns--two">
             <ResultSection title="Incident summary"><p>{analysis.result.summary}</p></ResultSection>

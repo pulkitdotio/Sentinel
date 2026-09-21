@@ -1,4 +1,5 @@
 import { ArrowRight } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 
 import { CheckTable } from '../features/checks/components/CheckTable';
@@ -15,6 +16,10 @@ import { MonitorStatus } from '../features/monitors/components/MonitorStatus';
 import { monitorErrorMessage } from '../features/monitors/monitor-error-message';
 import { useMonitorWorkspace } from '../features/monitors/monitor-workspace-context';
 import { formatDuration, formatExactDate, formatRelativeDate } from '../lib/dates';
+
+function enterStyle(index: number): CSSProperties {
+  return { '--app-enter-delay': `${String(index * 45)}ms` } as CSSProperties;
+}
 
 export function MonitorOverviewPage() {
   const monitor = useMonitorWorkspace();
@@ -71,29 +76,29 @@ function MetricsContent({ metrics, monitorId }: { metrics: MonitorMetrics; monit
         </div>
       ) : null}
 
-      <section className="metric-grid" aria-label="Monitor metrics">
-        <article><span>Uptime</span><strong>{formatPercentage(metrics.uptimePercentage)}</strong><small>{metrics.uptimePercentage === null ? 'No data yet' : `${formatCount(metrics.totals.successfulChecks)} successful checks`}</small></article>
-        <article><span>Average latency</span><strong>{formatLatency(metrics.latency.averageMs)}</strong><small>{formatCount(metrics.latency.sampleCount)} measured samples</small></article>
-        <article><span>Checks</span><strong>{formatCount(metrics.totals.checks)}</strong><small>All configured regions</small></article>
-        <article><span>Failures</span><strong>{formatCount(metrics.totals.failedChecks)}</strong><small>Within selected range</small></article>
-        <article><span>Current state</span><MonitorStatus status={metrics.monitor.status} /><small>Backend aggregate state</small></article>
+      <section className="metric-grid app-enter-sequence" aria-label="Monitor metrics">
+        <article className="app-enter-item" style={enterStyle(0)}><span>Uptime</span><strong>{formatPercentage(metrics.uptimePercentage)}</strong><small>{metrics.uptimePercentage === null ? 'No data yet' : `${formatCount(metrics.totals.successfulChecks)} successful checks`}</small></article>
+        <article className="app-enter-item" style={enterStyle(1)}><span>Average latency</span><strong>{formatLatency(metrics.latency.averageMs)}</strong><small>{formatCount(metrics.latency.sampleCount)} measured samples</small></article>
+        <article className="app-enter-item" style={enterStyle(2)}><span>Checks</span><strong>{formatCount(metrics.totals.checks)}</strong><small>All configured regions</small></article>
+        <article className="app-enter-item" style={enterStyle(3)}><span>Failures</span><strong>{formatCount(metrics.totals.failedChecks)}</strong><small>Within selected range</small></article>
+        <article className="app-enter-item" style={enterStyle(4)}><span>Current state</span><MonitorStatus status={metrics.monitor.status} /><small>Backend aggregate state</small></article>
       </section>
 
       <section className="latency-statistics operational-section">
         <div className="operational-section__heading"><div><h2>Latency distribution</h2><p>Exact aggregate statistics from measured check results.</p></div></div>
-        <div className="percentile-grid">
-          <div><span>Average</span><strong>{formatLatency(metrics.latency.averageMs)}</strong></div>
-          <div><span>P50</span><strong>{formatLatency(metrics.latency.p50Ms)}</strong></div>
-          <div><span>P95</span><strong>{formatLatency(metrics.latency.p95Ms)}</strong></div>
-          <div><span>P99</span><strong>{formatLatency(metrics.latency.p99Ms)}</strong></div>
+        <div className="percentile-grid app-enter-sequence">
+          <div className="app-enter-item" style={enterStyle(0)}><span>Average</span><strong>{formatLatency(metrics.latency.averageMs)}</strong></div>
+          <div className="app-enter-item" style={enterStyle(1)}><span>P50</span><strong>{formatLatency(metrics.latency.p50Ms)}</strong></div>
+          <div className="app-enter-item" style={enterStyle(2)}><span>P95</span><strong>{formatLatency(metrics.latency.p95Ms)}</strong></div>
+          <div className="app-enter-item" style={enterStyle(3)}><span>P99</span><strong>{formatLatency(metrics.latency.p99Ms)}</strong></div>
         </div>
       </section>
 
       <section className="operational-section">
         <div className="operational-section__heading"><div><h2>Regional evidence</h2><p>Latest result and aggregate performance by configured probe region.</p></div></div>
-        <div className="region-metric-grid">
-          {metrics.regions.map((region) => (
-            <article key={region.region}>
+        <div className="region-metric-grid app-enter-sequence">
+          {metrics.regions.map((region, index) => (
+            <article className="app-enter-item" key={region.region} style={enterStyle(index)}>
               <header><div><span>{regionLabel(region.region)}</span><code>{region.region}</code></div>{region.latestCheck ? <span className={`evidence-state evidence-state--${region.latestCheck.success ? 'success' : 'failed'}`}>{region.latestCheck.success ? 'Latest succeeded' : 'Latest failed'}</span> : <span className="evidence-state">No evidence</span>}</header>
               <dl>
                 <div><dt>Uptime</dt><dd>{formatPercentage(region.uptimePercentage)}</dd></div>

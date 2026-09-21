@@ -1,4 +1,4 @@
-import { RefreshCw } from 'lucide-react';
+import { CircleAlert, RefreshCw } from 'lucide-react';
 
 export function OperationalSkeleton({ label, rows = 4 }: { label: string; rows?: number }) {
   return (
@@ -11,6 +11,7 @@ export function OperationalSkeleton({ label, rows = 4 }: { label: string; rows?:
 export function OperationalError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <section className="operational-error" role="alert">
+      <div className="operational-state-icon operational-state-icon--error" aria-hidden="true"><CircleAlert size={19} /></div>
       <p className="eyebrow">Data unavailable</p>
       <h2>This operational view could not be loaded.</h2>
       <p>{message}</p>

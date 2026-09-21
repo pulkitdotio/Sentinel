@@ -1,9 +1,11 @@
 import { Activity, LogOut, Menu, Monitor, X } from 'lucide-react';
+import { AnimatePresence, LayoutGroup, m } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../auth/auth-context';
 import { RealtimeStatus } from '../../realtime/RealtimeStatus';
+import { appEase, appFastTransition } from './app-motion-config';
 import { Brand } from '../ui/Brand';
 
 const navigation = [
@@ -76,38 +78,54 @@ export function AppShell() {
         </div>
       </header>
 
-      {navigationOpen ? (
-        <button
-          className="app-navigation-scrim"
-          type="button"
-          aria-label="Close navigation"
-          onClick={() => closeNavigation(true)}
-        />
-      ) : null}
+      <AnimatePresence>
+        {navigationOpen ? (
+          <m.button
+            className="app-navigation-scrim"
+            type="button"
+            aria-label="Close navigation"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={appFastTransition}
+            onClick={() => closeNavigation(true)}
+          />
+        ) : null}
+      </AnimatePresence>
 
-      <aside
+      <m.aside
         ref={navigationRef}
         id="app-navigation"
         className={`app-sidebar${navigationOpen ? ' is-open' : ''}`}
         aria-hidden={mobileNavigation && !navigationOpen ? true : undefined}
         inert={mobileNavigation && !navigationOpen}
+        initial={false}
+        animate={{ x: mobileNavigation && !navigationOpen ? '-102%' : '0%' }}
+        transition={{ duration: 0.2, ease: appEase }}
       >
         <div className="app-sidebar__brand"><Brand to="/app" /></div>
-        <nav className="app-navigation" aria-label="Workspace navigation">
-          <p>Workspace</p>
-          {navigation.map(({ end, icon: Icon, label, to }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              onClick={() => closeNavigation(false)}
-              className={({ isActive }) => `app-navigation__link${isActive ? ' is-active' : ''}`}
-            >
-              <Icon size={16} aria-hidden="true" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
+        <LayoutGroup id="workspace-navigation">
+          <nav className="app-navigation" aria-label="Workspace navigation">
+            <p>Workspace</p>
+            {navigation.map(({ end, icon: Icon, label, to }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                onClick={() => closeNavigation(false)}
+                className={({ isActive }) => `app-navigation__link${isActive ? ' is-active' : ''}`}
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive ? <m.span className="app-navigation__active-rail" layoutId="workspace-active-rail" transition={appFastTransition} aria-hidden="true" /> : null}
+                    <Icon size={16} aria-hidden="true" />
+                    <span>{label}</span>
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </nav>
+        </LayoutGroup>
         <RealtimeStatus className="realtime-status--desktop" />
         <div className="app-sidebar__profile">
           <div className="app-user">
@@ -118,7 +136,7 @@ export function AppShell() {
             <LogOut size={15} aria-hidden="true" /> Sign out
           </button>
         </div>
-      </aside>
+      </m.aside>
 
       <main id="app-content" className="app-main">
         <Outlet />

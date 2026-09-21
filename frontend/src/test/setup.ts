@@ -1,8 +1,10 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
 import { resetFakeSocketIo } from './fake-socket-io-client';
+
+configure({ asyncUtilTimeout: 3_000 });
 
 vi.mock('socket.io-client', async () => {
   const fakeClient = await import('./fake-socket-io-client');

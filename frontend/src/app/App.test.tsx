@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -44,10 +44,44 @@ describe('Sentinel authentication routes', () => {
     openRoute('/');
   });
 
-  it('keeps the Phase 0 landing page available', async () => {
+  it('renders the refined landing architecture and current realtime copy', async () => {
     render(<App />);
     expect(await screen.findByRole('heading', { name: /know when your.?api breaks/i })).toBeInTheDocument();
     expect(screen.getByText('One endpoint. Three independent points of view.')).toBeInTheDocument();
+    expect(screen.getByText('Live event path · Authenticated Socket.IO delivery')).toBeInTheDocument();
+    expect(screen.queryByText(/no socket\.io client is connected/i)).not.toBeInTheDocument();
+  });
+
+  it('keeps landing content visible immediately when reduced motion is requested', async () => {
+    vi.stubGlobal('matchMedia', vi.fn().mockImplementation((query: string) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })));
+
+    render(<App />);
+    expect(await screen.findByRole('heading', { name: /know when your.?api breaks/i })).toBeVisible();
+
+    const revealElements = document.querySelectorAll<HTMLElement>('[data-motion-reveal="true"]');
+    expect(revealElements.length).toBeGreaterThan(0);
+    revealElements.forEach((element) => {
+      expect(element.style.opacity).not.toBe('0');
+      expect(element.style.transform).not.toContain('translate');
+    });
+  });
+
+  it('preserves native landing-page anchor navigation', async () => {
+    render(<App />);
+    const primaryNavigation = await screen.findByRole('navigation', { name: 'Primary navigation' });
+    expect(within(primaryNavigation).getByRole('link', { name: 'Product' })).toHaveAttribute('href', '#product');
+    expect(within(primaryNavigation).getByRole('link', { name: 'Monitoring' })).toHaveAttribute('href', '#monitoring');
+    expect(within(primaryNavigation).getByRole('link', { name: 'Architecture' })).toHaveAttribute('href', '#architecture');
+    expect(screen.getByRole('link', { name: /see monitoring/i })).toHaveAttribute('href', '#monitoring');
   });
 
   it('navigates from the landing sign-in action to /login', async () => {

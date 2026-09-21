@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import type { CheckResult } from '../api/check-contracts';
 import { checkErrorLabel } from '../check-formatters';
 import { formatExactDateWithSeconds } from '../../../lib/dates';
@@ -27,8 +28,12 @@ export function CheckTable({ checks, compact = false }: { checks: CheckResult[];
           </tr>
         </thead>
         <tbody>
-          {checks.map((check) => (
-            <tr key={check.id}>
+          {checks.map((check, index) => (
+            <tr
+              className="app-data-row-enter"
+              key={check.id}
+              style={{ '--app-enter-delay': `${String(Math.min(index, 7) * 25)}ms` } as CSSProperties}
+            >
               <td data-label="Time"><time dateTime={check.scheduledAt}>{formatExactDateWithSeconds(check.scheduledAt)}</time></td>
               <td data-label="Region"><code>{regionLabel(check.region)}</code></td>
               <td data-label="Result"><CheckResultBadge success={check.success} /></td>

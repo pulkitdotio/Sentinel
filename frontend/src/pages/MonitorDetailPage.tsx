@@ -1,7 +1,9 @@
 import { ArrowLeft, ExternalLink, Pause, Play } from 'lucide-react';
+import { LayoutGroup, m } from 'motion/react';
 import { Link, NavLink, Outlet, useParams } from 'react-router-dom';
 
 import { ApiError } from '../api/http-client';
+import { appFastTransition } from '../components/app/app-motion-config';
 import type { Monitor } from '../features/monitors/api/monitor-contracts';
 import { MonitorDetailSkeleton, MonitorErrorState } from '../features/monitors/components/MonitorStates';
 import { MonitorStatus } from '../features/monitors/components/MonitorStatus';
@@ -75,18 +77,25 @@ function MonitorWorkspace({ monitor }: { monitor: Monitor }) {
 
         {stateMutation.isError ? <p className="workspace-action-error" role="alert">{monitorErrorMessage(stateMutation.error)}</p> : null}
 
-        <nav className="monitor-subnav" aria-label="Monitor sections">
-          {monitorNavigation.map((item) => (
-            <NavLink
-              key={item.label}
-              to={item.path}
-              end={item.path === ''}
-              className={({ isActive }) => isActive ? 'is-active' : undefined}
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
+        <LayoutGroup id={`monitor-navigation-${monitor.id}`}>
+          <nav className="monitor-subnav" aria-label="Monitor sections">
+            {monitorNavigation.map((item) => (
+              <NavLink
+                key={item.label}
+                to={item.path}
+                end={item.path === ''}
+                className={({ isActive }) => isActive ? 'is-active' : undefined}
+              >
+                {({ isActive }) => (
+                  <>
+                    {item.label}
+                    {isActive ? <m.span className="monitor-subnav__active-indicator" layoutId="monitor-active-tab" transition={appFastTransition} aria-hidden="true" /> : null}
+                  </>
+                )}
+              </NavLink>
+            ))}
+          </nav>
+        </LayoutGroup>
         <Outlet />
       </div>
     </MonitorWorkspaceContext.Provider>

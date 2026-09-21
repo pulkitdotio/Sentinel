@@ -1,4 +1,5 @@
 import { ArrowLeft } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import { ApiError } from '../api/http-client';
@@ -31,6 +32,7 @@ export function IncidentDetailPage() {
 
 function IncidentDetail({ incident }: { incident: Incident }) {
   const monitorQuery = useMonitor(incident.monitorId);
+  const enterStyle = (index: number) => ({ '--app-enter-delay': `${String(index * 65)}ms` }) as CSSProperties;
 
   return (
     <div className="workspace-page incident-detail-page">
@@ -40,11 +42,11 @@ function IncidentDetail({ incident }: { incident: Incident }) {
         <span className={`incident-status incident-status--${incident.status}`}>{incident.status === 'open' ? 'Open' : 'Resolved'}</span>
       </header>
 
-      <section className="incident-summary-grid" aria-label="Incident summary">
-        <div><span>Monitor</span><strong>{monitorQuery.data?.name ?? incident.monitorId}</strong>{monitorQuery.data ? <Link to={`/app/monitors/${incident.monitorId}`}>Open monitor</Link> : null}</div>
-        <div><span>Opened</span><strong>{formatExactDateWithSeconds(incident.openedAt)}</strong></div>
-        <div><span>Resolved</span><strong>{incident.resolvedAt ? formatExactDateWithSeconds(incident.resolvedAt) : 'Ongoing'}</strong></div>
-        <div><span>Duration</span><strong>{formatDuration(incident.openedAt, incident.resolvedAt)}</strong></div>
+      <section className="incident-summary-grid app-enter-sequence" aria-label="Incident summary">
+        <div className="app-enter-item" style={enterStyle(0)}><span>Monitor</span><strong>{monitorQuery.data?.name ?? incident.monitorId}</strong>{monitorQuery.data ? <Link to={`/app/monitors/${incident.monitorId}`}>Open monitor</Link> : null}</div>
+        <div className="app-enter-item" style={enterStyle(1)}><span>Opened</span><strong>{formatExactDateWithSeconds(incident.openedAt)}</strong></div>
+        <div className="app-enter-item" style={enterStyle(2)}><span>Resolved</span><strong>{incident.resolvedAt ? formatExactDateWithSeconds(incident.resolvedAt) : 'Ongoing'}</strong></div>
+        <div className="app-enter-item" style={enterStyle(3)}><span>Duration</span><strong>{formatDuration(incident.openedAt, incident.resolvedAt)}</strong></div>
       </section>
 
       <section className="operational-section incident-evidence">
@@ -66,9 +68,9 @@ function IncidentDetail({ incident }: { incident: Incident }) {
 
       <section className="operational-section incident-timeline-section">
         <div className="operational-section__heading"><div><h2>Timeline</h2><p>Lifecycle events recorded by Sentinel’s incident engine.</p></div></div>
-        <ol className="incident-timeline">
+        <ol className="incident-timeline app-enter-sequence">
           {incident.events.map((event, index) => (
-            <li key={`${event.type}-${event.at}-${String(index)}`}>
+            <li className="app-enter-item" key={`${event.type}-${event.at}-${String(index)}`} style={enterStyle(index)}>
               <span aria-hidden="true" />
               <time dateTime={event.at}>{formatExactDateWithSeconds(event.at)}</time>
               <strong>{event.type === 'opened' ? 'Incident opened' : 'Incident resolved'}</strong>

@@ -1,5 +1,9 @@
 import { AlertTriangle, X } from 'lucide-react';
+import { m } from 'motion/react';
 import { useEffect, useRef, type KeyboardEvent } from 'react';
+
+import { appFastTransition } from '../../../components/app/app-motion-config';
+import { usePrefersReducedMotion } from '../../../hooks/usePrefersReducedMotion';
 
 interface DeleteMonitorDialogProps {
   deleting: boolean;
@@ -11,6 +15,7 @@ interface DeleteMonitorDialogProps {
 
 export function DeleteMonitorDialog({ deleting, error, monitorName, onCancel, onConfirm }: DeleteMonitorDialogProps) {
   const cancelButton = useRef<HTMLButtonElement>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     const previouslyFocused = document.activeElement instanceof HTMLElement
@@ -42,14 +47,23 @@ export function DeleteMonitorDialog({ deleting, error, monitorName, onCancel, on
   };
 
   return (
-    <div className="dialog-backdrop" role="presentation">
-      <div
+    <m.div
+      className="dialog-backdrop"
+      role="presentation"
+      initial={prefersReducedMotion ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={prefersReducedMotion ? { duration: 0 } : appFastTransition}
+    >
+      <m.div
         className="delete-dialog"
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="delete-dialog-title"
         aria-describedby="delete-dialog-description"
         onKeyDown={handleKeyDown}
+        initial={prefersReducedMotion ? false : { opacity: 0, scale: 0.975, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={prefersReducedMotion ? { duration: 0 } : appFastTransition}
       >
         <div className="delete-dialog__header">
           <span><AlertTriangle size={20} aria-hidden="true" /></span>
@@ -62,7 +76,7 @@ export function DeleteMonitorDialog({ deleting, error, monitorName, onCancel, on
           <button ref={cancelButton} className="button button--secondary" type="button" disabled={deleting} onClick={onCancel}>Cancel</button>
           <button className="button button--danger" type="button" disabled={deleting} onClick={onConfirm}>{deleting ? 'Deleting…' : 'Delete monitor'}</button>
         </div>
-      </div>
-    </div>
+      </m.div>
+    </m.div>
   );
 }

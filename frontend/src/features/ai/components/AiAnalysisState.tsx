@@ -56,7 +56,13 @@ export function AiAnalysisState({
 
   if (analysis?.status === 'queued' || analysis?.status === 'processing') {
     return (
-      <div className="ai-analysis-state ai-analysis-state--active" role="status" aria-live="polite" aria-atomic="true">
+      <div
+        key={analysis.status}
+        className="ai-analysis-state ai-analysis-state--active app-state-enter"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <LoaderCircle size={17} aria-hidden="true" />
         <div>
           <strong>{analysis.status === 'queued' ? 'Analysis queued' : 'Analyzing Sentinel evidence…'}</strong>
@@ -76,7 +82,10 @@ export function AiAnalysisState({
 
 function AnalysisFailure({ message, retryable, onRetry }: SafeMessage & { onRetry: () => void }) {
   return (
-    <div className="ai-analysis-state ai-analysis-state--failed" role="alert">
+    <div
+      className="ai-analysis-state ai-analysis-state--failed app-state-enter"
+      role="alert"
+    >
       <TriangleAlert size={17} aria-hidden="true" />
       <div>
         <strong>Analysis unavailable</strong>
@@ -86,4 +95,3 @@ function AnalysisFailure({ message, retryable, onRetry }: SafeMessage & { onRetr
     </div>
   );
 }
-

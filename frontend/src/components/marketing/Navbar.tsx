@@ -1,13 +1,33 @@
 import { ArrowUpRight } from 'lucide-react';
+import { m } from 'motion/react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { usePrefersReducedMotion } from '../../hooks/usePrefersReducedMotion';
+import { cn } from '../../lib/cn';
 import { Brand } from '../ui/Brand';
 import { ButtonRouteLink } from '../ui/Button';
 import { Container } from '../ui/Container';
+import { sentinelEase } from './motion-config';
 
 export function Navbar() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  useEffect(() => {
+    const updateScrolledState = () => setIsScrolled(window.scrollY > 24);
+    updateScrolledState();
+    window.addEventListener('scroll', updateScrolledState, { passive: true });
+    return () => window.removeEventListener('scroll', updateScrolledState);
+  }, []);
+
   return (
-    <header className="navbar">
+    <m.header
+      className={cn('navbar', isScrolled && 'navbar--scrolled')}
+      initial={prefersReducedMotion ? false : { opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: prefersReducedMotion ? 0 : 0.55, ease: sentinelEase }}
+    >
       <Container className="navbar__inner">
         <Brand />
         <nav className="navbar__links" aria-label="Primary navigation">
@@ -22,6 +42,6 @@ export function Navbar() {
           </ButtonRouteLink>
         </div>
       </Container>
-    </header>
+    </m.header>
   );
 }

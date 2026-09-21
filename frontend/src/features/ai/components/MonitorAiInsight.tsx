@@ -78,7 +78,10 @@ function AdvisoryHeading({ id, title, description }: { id: string; title: string
 
 function MonitorInsightResult({ analysis, result }: { analysis: Extract<AiAnalysis, { type: 'monitor_health'; status: 'completed' }>; result: MonitorHealthAiResult }) {
   return (
-    <article className="ai-result" aria-labelledby={`ai-result-${analysis.id}`}>
+    <article
+      className="ai-result app-state-enter"
+      aria-labelledby={`ai-result-${analysis.id}`}
+    >
       <header>
         <div><p className="eyebrow">Advisory health insight</p><h3 id={`ai-result-${analysis.id}`}>Recent telemetry assessment</h3></div>
         <span className="ai-risk-label">AI risk assessment: <strong>{capitalize(result.reliabilityRisk)}</strong></span>

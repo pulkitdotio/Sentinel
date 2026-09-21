@@ -1,4 +1,5 @@
 import { ArrowRight, Plus } from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useAuth } from '../auth/auth-context';
@@ -51,9 +52,13 @@ function OverviewContent({ monitors }: { monitors: NonNullable<ReturnType<typeof
   const counts = countMonitorStatuses(monitors);
   return (
     <>
-      <section className="summary-grid" aria-label="Monitor status summary">
-        {summaryItems.map((item) => (
-          <article className={`summary-card summary-card--${item.key}`} key={item.key}>
+      <section className="summary-grid app-enter-sequence" aria-label="Monitor status summary">
+        {summaryItems.map((item, index) => (
+          <article
+            className={`summary-card summary-card--${item.key} app-enter-item`}
+            key={item.key}
+            style={{ '--app-enter-delay': `${String(index * 45)}ms` } as CSSProperties}
+          >
             <span>{item.label}</span><strong>{counts[item.key]}</strong>
           </article>
         ))}
