@@ -66,7 +66,7 @@ export function AiAnalysisState({
         <LoaderCircle size={17} aria-hidden="true" />
         <div>
           <strong>{analysis.status === 'queued' ? 'Analysis queued' : 'Analyzing Sentinel evidence…'}</strong>
-          <p>{analysis.status === 'queued' ? 'Waiting for an AI worker…' : 'Reviewing bounded uptime, latency, regional, and incident telemetry.'}</p>
+          <p>{analysis.status === 'queued' ? 'Waiting to begin analysis…' : 'Reviewing bounded uptime, latency, regional, and incident telemetry.'}</p>
         </div>
       </div>
     );

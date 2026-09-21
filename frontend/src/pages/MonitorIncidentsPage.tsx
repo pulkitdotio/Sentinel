@@ -58,7 +58,7 @@ export function MonitorIncidentsPage() {
           <div className="incident-table__head" aria-hidden="true"><span>Status</span><span>Opened</span><span>Resolved / ongoing</span><span>Duration</span><span>Trigger</span><span /></div>
           {incidentsQuery.data.incidents.map((incident) => (
             <Link className="incident-table__row" to={`/app/incidents/${incident.id}`} key={incident.id} aria-label={`Open ${incident.status} incident from ${formatExactDate(incident.openedAt)}`}>
-              <span data-label="Status" className={`incident-status incident-status--${incident.status}`}>{incident.status === 'open' ? 'Open' : 'Resolved'}</span>
+              <span data-label="Status"><span className={`incident-status incident-status--${incident.status}`}>{incident.status === 'open' ? 'Open' : 'Resolved'}</span></span>
               <time data-label="Opened" dateTime={incident.openedAt}>{formatExactDate(incident.openedAt)}</time>
               <span data-label="Resolved / ongoing">{incident.resolvedAt ? <time dateTime={incident.resolvedAt}>{formatExactDate(incident.resolvedAt)}</time> : 'Ongoing'}</span>
               <code data-label="Duration">{formatDuration(incident.openedAt, incident.resolvedAt)}</code>

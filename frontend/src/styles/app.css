@@ -62,6 +62,7 @@
 .workspace-page--form { width: min(100%, 1260px); }
 .workspace-heading { padding-bottom: 34px; border-bottom: 1px solid var(--line); }
 .workspace-heading--with-action { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; }
+.workspace-heading--with-action .button { flex: 0 0 auto; white-space: nowrap; }
 .workspace-heading .eyebrow, .monitor-detail-heading .eyebrow { margin: 0 0 13px; font-size: 10px; }
 .workspace-heading h1, .monitor-detail-heading h1, .resource-not-found h1 { margin: 0; font-family: var(--display); font-size: clamp(42px, 5vw, 60px); font-weight: 400; line-height: 1; letter-spacing: -.045em; }
 .workspace-heading > p:last-child, .workspace-heading > div > p:last-child { margin: 14px 0 0; color: var(--muted); font-size: 13px; }
@@ -132,6 +133,7 @@
 .workspace-back-link { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 29px; color: var(--muted); font-size: 11px; }
 .workspace-back-link:hover { color: var(--text); }
 .monitor-detail-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 30px; padding-bottom: 31px; border-bottom: 1px solid var(--line); }
+.monitor-detail-heading > div:first-child { min-width: 0; }
 .monitor-detail-heading__title { display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 16px; }
 .monitor-detail-heading__title h1 { overflow-wrap: anywhere; }
 .monitor-detail-heading a { display: flex; min-width: 0; align-items: center; gap: 7px; max-width: 670px; margin-top: 12px; overflow: hidden; color: var(--muted); font-family: var(--mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
@@ -217,7 +219,7 @@
   .monitor-table__head > span:nth-child(5), .monitor-table__row > :nth-child(5) { display: none; }
 }
 
-@media (max-width: 850px) {
+@media (max-width: 920px) {
   .app-topbar { position: sticky; top: 0; z-index: 35; display: flex; height: 64px; align-items: center; justify-content: space-between; padding: 0 20px; border-bottom: 1px solid var(--line); background: rgba(8,10,9,.92); backdrop-filter: blur(18px); }
   .app-topbar__actions { display: flex; align-items: center; gap: 12px; }
   .realtime-status--mobile { display: inline-flex; }
@@ -809,12 +811,14 @@
   .monitor-form__grid--three > :last-child { grid-column: 1 / -1; }
 }
 
-@media (max-width: 850px) {
+@media (max-width: 920px) {
   .app-sidebar { width: min(88vw, 280px); transition: none; }
   .app-main { margin-left: 0; }
   .app-topbar { height: 60px; padding-inline: 18px; }
   .app-navigation-scrim { inset: 60px 0 0; }
   .workspace-page { padding: 36px 22px 64px; }
+  .monitor-detail-heading { align-items: stretch; flex-direction: column; }
+  .monitor-detail-heading > div:first-child { width: 100%; }
   .monitor-detail-heading a { max-width: 100%; }
   .monitor-form__grid--three { grid-template-columns: repeat(2, 1fr); }
 }
@@ -861,7 +865,13 @@
   .monitor-form__section-heading > span { width: 30px; height: 30px; }
   .monitor-facts > div { min-height: 90px; }
   .incident-summary-grid > div { min-height: 91px; }
+  .incident-summary-grid strong { overflow: visible; overflow-wrap: anywhere; text-overflow: clip; white-space: normal; }
   .incident-timeline li { padding-left: 25px; }
+  .recent-incident-list > a { align-items: start; padding-block: 13px; }
+  .recent-incident-list strong { overflow: visible; overflow-wrap: anywhere; text-overflow: clip; white-space: normal; }
+  .incident-table__row > [data-label], .incident-region-evidence span, .incident-timeline p,
+  .monitor-form__hint, .monitor-form__error, .monitor-form__submit-error { min-width: 0; overflow-wrap: anywhere; }
+  .incident-table__row > [data-label]::before { flex: 0 0 auto; }
   .ai-advisory-panel { padding: 17px 15px; }
   .ai-advisory-panel__heading { gap: 10px; }
   .ai-result__section { padding: 14px; }

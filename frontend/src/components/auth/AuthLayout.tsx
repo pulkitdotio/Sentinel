@@ -26,7 +26,7 @@ export function AuthLayout() {
               <code>{region.latency}</code>
             </div>
           ))}
-          <p>Static product preview</p>
+          <p>Regional telemetry example</p>
         </div>
       </aside>
       <section className="auth-panel">

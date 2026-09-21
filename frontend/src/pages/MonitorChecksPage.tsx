@@ -61,7 +61,7 @@ export function MonitorChecksPage() {
   return (
     <div className="monitor-workspace__content">
       <div className="operational-toolbar">
-        <div><h2>Check history</h2><p>Newest-first regional probe evidence, paginated by the backend.</p></div>
+        <div><h2>Check history</h2><p>Newest-first regional probe evidence across the selected range.</p></div>
         <div className="check-filters">
           <TimeRangeControl value={preset} onChange={setPreset} />
           <label>Region<select value={region ?? ''} onChange={(event) => updateRegion(event.target.value)}><option value="">All regions</option>{monitor.regions.map((value) => <option value={value} key={value}>{regionLabel(value)}</option>)}</select></label>

@@ -132,7 +132,7 @@ export function ProductShowcase() {
               </div>
             </div>
           </div>
-          <p className="preview-caption">Static product preview · Presentational data only</p>
+          <p className="preview-caption">Representative monitoring workspace</p>
         </m.div>
       </Container>
     </Section>

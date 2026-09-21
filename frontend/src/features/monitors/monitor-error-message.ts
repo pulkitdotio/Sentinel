@@ -14,7 +14,7 @@ export function monitorErrorMessage(error: unknown): string {
     case 'MONITOR_NOT_FOUND':
       return 'This monitor could not be found.';
     case 'CONFIGURATION_ERROR':
-      return 'Sentinel is not configured to reach the backend.';
+      return 'Sentinel is not configured to reach its API.';
     default:
       return error.status !== null && error.status >= 500
         ? 'Sentinel is temporarily unable to complete this request. Try again.'

@@ -81,7 +81,7 @@ function MetricsContent({ metrics, monitorId }: { metrics: MonitorMetrics; monit
         <article className="app-enter-item" style={enterStyle(1)}><span>Average latency</span><strong>{formatLatency(metrics.latency.averageMs)}</strong><small>{formatCount(metrics.latency.sampleCount)} measured samples</small></article>
         <article className="app-enter-item" style={enterStyle(2)}><span>Checks</span><strong>{formatCount(metrics.totals.checks)}</strong><small>All configured regions</small></article>
         <article className="app-enter-item" style={enterStyle(3)}><span>Failures</span><strong>{formatCount(metrics.totals.failedChecks)}</strong><small>Within selected range</small></article>
-        <article className="app-enter-item" style={enterStyle(4)}><span>Current state</span><MonitorStatus status={metrics.monitor.status} /><small>Backend aggregate state</small></article>
+        <article className="app-enter-item" style={enterStyle(4)}><span>Current state</span><MonitorStatus status={metrics.monitor.status} /><small>Aggregate monitor state</small></article>
       </section>
 
       <section className="latency-statistics operational-section">

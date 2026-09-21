@@ -21,7 +21,7 @@ const mobilePaths = [
 
 const pathDelay = [0, 1.2, 2.4];
 
-function SignalPaths({ active, mobile = false }: { active: boolean; mobile?: boolean }) {
+function SignalPaths({ active, mobile = false, reduced }: { active: boolean; mobile?: boolean; reduced: boolean }) {
   const paths = mobile ? mobilePaths : desktopPaths;
 
   return (
@@ -31,9 +31,9 @@ function SignalPaths({ active, mobile = false }: { active: boolean; mobile?: boo
           <m.path
             className="beacon-network__path"
             d={path}
-            initial={{ pathLength: 0, opacity: 0 }}
+            initial={reduced ? false : { pathLength: 0, opacity: 0 }}
             animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 0.85, delay: 0.92 + index * 0.1, ease: sentinelEase }}
+            transition={reduced ? { duration: 0 } : { duration: 0.85, delay: 0.92 + index * 0.1, ease: sentinelEase }}
           />
           <m.path
             className="beacon-network__signal"
@@ -96,8 +96,8 @@ export function HeroBeacon() {
               <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
             </filter>
           </defs>
-          <SignalPaths active={shouldAnimate} />
-          <SignalPaths active={shouldAnimate} mobile />
+          <SignalPaths active={shouldAnimate} reduced={prefersReducedMotion} />
+          <SignalPaths active={shouldAnimate} mobile reduced={prefersReducedMotion} />
         </svg>
 
         <div className="beacon-core" aria-hidden="true">

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -267,6 +267,60 @@ describe('Sentinel authentication routes', () => {
     expect(await screen.findByRole('heading', { name: 'This workspace view does not exist.' })).toBeInTheDocument();
     expect(screen.getByRole('navigation', { name: 'Workspace navigation' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Return to overview' })).toBeInTheDocument();
+  });
+
+  it('moves focus out of desktop navigation when a resize hides it', async () => {
+    let mobileListener: ((event: MediaQueryListEvent) => void) | undefined;
+    vi.stubGlobal('matchMedia', vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addEventListener: (type: string, listener: (event: MediaQueryListEvent) => void) => {
+        if (query === '(max-width: 920px)' && type === 'change') mobileListener = listener;
+      },
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })));
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'stored-token');
+    mockSuccessfulSession();
+    openRoute('/app');
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Monitoring overview' })).toBeInTheDocument();
+    const overviewLink = screen.getByRole('link', { name: 'Overview' });
+    overviewLink.focus();
+    expect(overviewLink).toHaveFocus();
+
+    act(() => mobileListener?.({ matches: true } as MediaQueryListEvent));
+
+    expect(screen.getByRole('button', { name: 'Open navigation' })).toHaveFocus();
+    expect(screen.getByRole('complementary', { hidden: true })).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('moves focus to the first visible drawer link when mobile navigation opens', async () => {
+    let isMobile = true;
+    vi.stubGlobal('matchMedia', vi.fn().mockImplementation((query: string) => ({
+      matches: isMobile && query === '(max-width: 920px)',
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })));
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, 'stored-token');
+    mockSuccessfulSession();
+    openRoute('/app');
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Monitoring overview' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Open navigation' }));
+
+    expect(screen.getByRole('link', { name: 'Overview' })).toHaveFocus();
+    isMobile = false;
   });
 
   it.each(['/login', '/register'])('redirects an authenticated visitor from %s to /app', async (path) => {

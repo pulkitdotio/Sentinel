@@ -13,20 +13,25 @@ const navigation = [
   { label: 'Monitors', to: '/app/monitors', icon: Monitor, end: false },
 ] as const;
 
+const mobileNavigationQuery = '(max-width: 920px)';
+
 export function AppShell() {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [mobileNavigation, setMobileNavigation] = useState(
-    () => typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 850px)').matches,
+    () => typeof window.matchMedia === 'function' && window.matchMedia(mobileNavigationQuery).matches,
   );
   const navigationRef = useRef<HTMLElement>(null);
   const navigationToggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return;
-    const mediaQuery = window.matchMedia('(max-width: 850px)');
+    const mediaQuery = window.matchMedia(mobileNavigationQuery);
     const handleChange = (event: MediaQueryListEvent) => {
+      if (event.matches && navigationRef.current?.contains(document.activeElement)) {
+        navigationToggleRef.current?.focus();
+      }
       setMobileNavigation(event.matches);
       if (!event.matches) setNavigationOpen(false);
     };
@@ -36,7 +41,7 @@ export function AppShell() {
 
   useEffect(() => {
     if (!mobileNavigation || !navigationOpen) return;
-    navigationRef.current?.querySelector<HTMLElement>('a[href]')?.focus();
+    navigationRef.current?.querySelector<HTMLElement>('.app-navigation a[href]')?.focus();
 
     const handleEscape = (event: globalThis.KeyboardEvent) => {
       if (event.key !== 'Escape') return;
