@@ -47,7 +47,7 @@ export function RegisterPage() {
             id="name"
             type="text"
             autoComplete="name"
-            placeholder="Pulkit"
+            placeholder="Enter your username"
             aria-invalid={errors.name ? 'true' : 'false'}
             aria-describedby={errors.name ? 'name-error' : undefined}
           />
@@ -60,7 +60,7 @@ export function RegisterPage() {
             id="email"
             type="email"
             autoComplete="email"
-            placeholder="you@example.com"
+            placeholder="Enter your email"
             aria-invalid={errors.email ? 'true' : 'false'}
             aria-describedby={errors.email ? 'email-error' : undefined}
           />
