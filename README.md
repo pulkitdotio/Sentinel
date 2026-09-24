@@ -182,12 +182,6 @@ Sentinel/
 │       ├── pages/
 │       └── realtime/
 │
-├── API_SPEC.md
-├── ARCHITECTURE.md
-├── DATA_MODEL.md
-├── ENVIRONMENT.md
-├── AI_SPEC.md
-├── PRD.md
 └── README.md
 ```
 
@@ -1104,53 +1098,6 @@ frontend/dist/
 
 ---
 
-# Additional Documentation
-
-The repository contains additional documentation describing the system in more detail.
-
-```text
-PRD.md
-```
-
-Contains product goals, scope and requirements.
-
-```text
-ARCHITECTURE.md
-```
-
-Describes the backend architecture and runtime processes.
-
-```text
-API_SPEC.md
-```
-
-Contains detailed REST API and Socket.IO contracts.
-
-```text
-DATA_MODEL.md
-```
-
-Describes MongoDB entities and relationships.
-
-```text
-ENVIRONMENT.md
-```
-
-Documents available environment variables.
-
-```text
-AI_SPEC.md
-```
-
-Describes AI functionality, architecture and failure handling.
-
-```text
-PHASES.md
-```
-
-Contains project development phases and acceptance criteria.
-
----
 
 # Current Scope
 
@@ -1211,8 +1158,6 @@ Rather than building only a CRUD dashboard, Sentinel focuses on the infrastructu
 # License
 
 This project is intended primarily for educational and portfolio purposes.
-
-Add your preferred license here if you plan to distribute or open-source the project.
 
 ---
 
